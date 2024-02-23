@@ -35,3 +35,13 @@ type Recipe struct {
 	CreatedAt    time.Time          `json:"created_at"`
 	LastModified time.Time          `json:"last_modified"`
 }
+
+func (recipe *Recipe) Cost() float64 {
+	cost := 0.0
+
+	for _, ingredient := range recipe.Ingredients {
+		cost += ingredient.Ingredient.Price * float64(ingredient.Units)
+	}
+
+	return cost
+}

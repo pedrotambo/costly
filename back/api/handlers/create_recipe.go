@@ -57,6 +57,9 @@ func CreateRecipeHandler(recipeRepository repository.RecipeRepository) http.Hand
 			return
 		}
 
-		RespondJSON(w, 201, recipe)
+		RespondJSON(w, 201, RecipeResponse{
+			Recipe: recipe,
+			Cost:   recipe.Cost(),
+		})
 	}
 }

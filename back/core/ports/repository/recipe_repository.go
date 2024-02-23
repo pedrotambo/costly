@@ -54,7 +54,8 @@ func (r *recipeRepository) GetRecipe(ctx context.Context, id int64) (domain.Reci
 	} else if err != nil {
 		return domain.Recipe{}, err
 	}
-	var recipeIngredients []domain.RecipeIngredient
+
+	recipeIngredients := []domain.RecipeIngredient{}
 	for rows.Next() {
 		var ingredient domain.Ingredient
 		var units int
@@ -83,7 +84,7 @@ func (r *recipeRepository) GetRecipes(ctx context.Context) ([]domain.Recipe, err
 		return nil, err
 	}
 
-	var recipesDB []recipeDB
+	recipesDB := []recipeDB{}
 	for rows.Next() {
 		var recipe recipeDB
 		if err := rows.Scan(&recipe.id, &recipe.name, &recipe.createdAt, &recipe.lastModified); err != nil {
@@ -92,13 +93,13 @@ func (r *recipeRepository) GetRecipes(ctx context.Context) ([]domain.Recipe, err
 		recipesDB = append(recipesDB, recipe)
 	}
 
-	var recipes []domain.Recipe
+	recipes := []domain.Recipe{}
 	for _, recipeDB := range recipesDB {
 		rows, err := r.db.QueryContext(ctx, "SELECT i.*, ri.units FROM ingredient i JOIN recipe_ingredient ri ON i.id = ri.ingredient_id AND ri.recipe_id = ?", recipeDB.id)
 		if err != nil {
 			return nil, err
 		}
-		var recipeIngredients []domain.RecipeIngredient
+		recipeIngredients := []domain.RecipeIngredient{}
 		for rows.Next() {
 			var ingredient domain.Ingredient
 			var units int
@@ -119,14 +120,13 @@ func (r *recipeRepository) GetRecipes(ctx context.Context) ([]domain.Recipe, err
 			LastModified: recipeDB.lastModified,
 		})
 	}
-
 	return recipes, nil
 }
 
 func (r *recipeRepository) CreateRecipe(ctx context.Context, name string, ingredients []RecipeIngredientInput) (domain.Recipe, error) {
 	now := r.clock.Now()
 	var recipeID int64 = -1
-	var recipeIngredients []domain.RecipeIngredient
+	recipeIngredients := []domain.RecipeIngredient{}
 	if err := r.db.WithTx(ctx, func(tx *sql.Tx) error {
 		result, err := tx.ExecContext(ctx, "INSERT INTO recipe (name, created_at, last_modified) VALUES (?, ?, ?)", name, now, now)
 		if err != nil {

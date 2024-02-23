@@ -20,11 +20,11 @@ func GetRecipesHandler(recipeRepository repository.RecipeRepository, costService
 			return
 		}
 
-		var recipeResponses []RecipeResponse
+		recipeResponses := []RecipeResponse{}
 		for _, recipe := range recipes {
 			recipeResponses = append(recipeResponses, RecipeResponse{
 				Recipe: recipe,
-				Cost:   costService.GetRecipeCost(r.Context(), &recipe),
+				Cost:   recipe.Cost(),
 			})
 		}
 

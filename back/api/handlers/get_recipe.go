@@ -35,11 +35,9 @@ func GetRecipeHandler(recipeRepository repository.RecipeRepository, costService 
 			return
 		}
 
-		recipeCost := costService.GetRecipeCost(r.Context(), &recipe)
-
 		RespondJSON(w, 200, RecipeResponse{
 			Recipe: recipe,
-			Cost:   recipeCost,
+			Cost:   recipe.Cost(),
 		})
 	}
 }

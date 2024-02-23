@@ -42,7 +42,7 @@ func (r *ingredientRepository) GetIngredients(ctx context.Context) ([]domain.Ing
 		return nil, err
 	}
 
-	var ingredients []domain.Ingredient
+	ingredients := []domain.Ingredient{}
 	for rows.Next() {
 		var ingredient domain.Ingredient
 		if err := rows.Scan(&ingredient.ID, &ingredient.Name, &ingredient.Unit, &ingredient.Price, &ingredient.CreatedAt, &ingredient.LastModified); err != nil {
