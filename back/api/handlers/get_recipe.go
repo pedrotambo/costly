@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"costly/core/domain"
-	costs "costly/core/logic"
 	"costly/core/ports/repository"
 	"net/http"
 	"strconv"
@@ -16,7 +15,7 @@ type RecipeResponse struct {
 	Cost float64 `json:"cost"`
 }
 
-func GetRecipeHandler(recipeRepository repository.RecipeRepository, costService costs.CostService) http.HandlerFunc {
+func GetRecipeHandler(recipeRepository repository.RecipeRepository) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		recipeIDstr := chi.URLParam(r, "recipeID")
 		recipeID, err := strconv.ParseInt(recipeIDstr, 10, 64)

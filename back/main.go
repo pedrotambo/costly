@@ -9,7 +9,6 @@ import (
 	"syscall"
 
 	"costly/api"
-	costs "costly/core/logic"
 	"costly/core/ports/clock"
 	"costly/core/ports/database"
 	"costly/core/ports/repository"
@@ -61,13 +60,12 @@ func main() {
 }
 
 type AppComponents struct {
-	logger      *zerolog.Logger
-	database    *database.Database
-	router      chi.Router
-	server      *http.Server
-	clock       clock.Clock
-	repository  *repository.Repository
-	costService costs.CostService
+	logger     *zerolog.Logger
+	database   *database.Database
+	router     chi.Router
+	server     *http.Server
+	clock      clock.Clock
+	repository *repository.Repository
 }
 
 func initComponents(config *Config) (AppComponents, error) {
@@ -101,20 +99,18 @@ func initComponents(config *Config) (AppComponents, error) {
 
 	clock := clock.New()
 	repository := repository.New(database, clock)
-	costService := costs.NewCostService()
-	router := api.NewRouter(database, clock, repository, costService, authSupport, loggerInjectorMiddleware)
+	router := api.NewRouter(database, clock, repository, authSupport, loggerInjectorMiddleware)
 	server := http.Server{
 		Addr:    config.ListenAddress,
 		Handler: router,
 	}
 
 	return AppComponents{
-		logger:      &logger,
-		database:    database,
-		router:      router,
-		server:      &server,
-		clock:       clock,
-		repository:  repository,
-		costService: costService,
+		logger:     &logger,
+		database:   database,
+		router:     router,
+		server:     &server,
+		clock:      clock,
+		repository: repository,
 	}, nil
 }

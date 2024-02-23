@@ -2,7 +2,7 @@ package api
 
 import (
 	"costly/api/handlers"
-	costs "costly/core/logic"
+
 	"costly/core/ports/clock"
 	"costly/core/ports/database"
 	"costly/core/ports/repository"
@@ -22,7 +22,7 @@ func init() {
 
 type Middleware func(http.Handler) http.Handler
 
-func NewRouter(database *database.Database, clock clock.Clock, repository *repository.Repository, costService costs.CostService, as *AuthSupport, middlewares ...Middleware) chi.Router {
+func NewRouter(database *database.Database, clock clock.Clock, repository *repository.Repository, as *AuthSupport, middlewares ...Middleware) chi.Router {
 	r := chi.NewRouter()
 
 	for _, m := range middlewares {
@@ -49,8 +49,8 @@ func NewRouter(database *database.Database, clock clock.Clock, repository *repos
 
 		// recipes
 		r.Post("/recipes", handlers.CreateRecipeHandler(repository))
-		r.Get("/recipes", handlers.GetRecipesHandler(repository, costService))
-		r.Get("/recipes/{recipeID}", handlers.GetRecipeHandler(repository, costService))
+		r.Get("/recipes", handlers.GetRecipesHandler(repository))
+		r.Get("/recipes/{recipeID}", handlers.GetRecipeHandler(repository))
 	})
 
 	return r

@@ -8,19 +8,26 @@ import (
 	"github.com/rs/zerolog"
 )
 
+type validationErrorResponse struct {
+	Errors []ValidationError `json:"errors"`
+}
+
 type createIngredientRequest struct {
 	Name  string      `json:"name"`
 	Unit  domain.Unit `json:"unit"`
 	Price float64     `json:"price"`
 }
 
-func (req createIngredientRequest) Validate() error {
+var ErrBadName = NewValidationError("name", "el name debe ser valido")
+var ErrBadUnit = NewValidationError("unit", "la unidad es inválida")
+
+func (req createIngredientRequest) validate() error {
 	if req.Name == "" {
-		return NewValidationError("name", "el name debe ser valido")
+		return ErrBadName
 	}
 
 	if req.Unit != "gr" {
-		return NewValidationError("unit", "la unidad es inválida")
+		return ErrBadUnit
 	}
 
 	return nil
@@ -36,16 +43,12 @@ func CreateIngredientHandler(repository repository.IngredientRepository) http.Ha
 			return
 		}
 
-		// TODO: refactor this out
-		if err := createReq.Validate(); err != nil {
-			vErr, ok := err.(ValidationError)
-			if ok {
-				RespondJSON(w, http.StatusBadRequest, ValidationErrorResponse{
-					Errors: []ValidationError{vErr},
-				})
-				return
-			}
-			http.Error(w, err.Error(), http.StatusBadRequest)
+		err := createReq.validate()
+
+		if err != nil {
+			RespondJSON(w, http.StatusBadRequest, validationErrorResponse{
+				Errors: []ValidationError{err.(ValidationError)},
+			})
 			return
 		}
 

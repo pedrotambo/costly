@@ -1,14 +1,13 @@
 package handlers
 
 import (
-	costs "costly/core/logic"
 	"costly/core/ports/repository"
 	"net/http"
 
 	"github.com/rs/zerolog"
 )
 
-func GetRecipesHandler(recipeRepository repository.RecipeRepository, costService costs.CostService) http.HandlerFunc {
+func GetRecipesHandler(recipeRepository repository.RecipeRepository) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		recipes, err := recipeRepository.GetRecipes(r.Context())
 		if err == repository.ErrNotFound {
