@@ -99,7 +99,7 @@ func initComponents(config *Config) (AppComponents, error) {
 
 	clock := clock.New()
 	repository := repository.New(database, clock)
-	router := api.NewRouter(database, clock, repository, authSupport, loggerInjectorMiddleware)
+	router := api.NewRouter(repository, authSupport, loggerInjectorMiddleware)
 	server := http.Server{
 		Addr:    config.ListenAddress,
 		Handler: router,

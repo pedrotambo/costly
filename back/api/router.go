@@ -3,8 +3,6 @@ package api
 import (
 	"costly/api/handlers"
 
-	"costly/core/ports/clock"
-	"costly/core/ports/database"
 	"costly/core/ports/repository"
 	"net/http"
 
@@ -22,7 +20,7 @@ func init() {
 
 type Middleware func(http.Handler) http.Handler
 
-func NewRouter(database *database.Database, clock clock.Clock, repository *repository.Repository, as *AuthSupport, middlewares ...Middleware) chi.Router {
+func NewRouter(repository *repository.Repository, as *AuthSupport, middlewares ...Middleware) chi.Router {
 	r := chi.NewRouter()
 
 	for _, m := range middlewares {
