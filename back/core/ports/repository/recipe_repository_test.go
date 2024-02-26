@@ -17,39 +17,37 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-type ingredientOpts struct {
-	Name  string
-	Price float64
-	Unit  domain.Unit
-}
-
-var meat = ingredientOpts{
+var meat = repository.CreateIngredientOptions{
 	Name:  "meat",
 	Price: 1.0,
 	Unit:  domain.Gram,
 }
 
-var salt = ingredientOpts{
+var salt = repository.CreateIngredientOptions{
 	Name:  "salt",
 	Price: 10.0,
 	Unit:  domain.Gram,
 }
 
-var pepper = ingredientOpts{
+var pepper = repository.CreateIngredientOptions{
 	Name:  "pepper",
 	Price: 13.0,
 	Unit:  domain.Gram,
 }
 
-var ingredientOptsByName = map[string]ingredientOpts{meat.Name: meat, salt.Name: salt, pepper.Name: pepper}
+var ingredientOptsByName = map[string]repository.CreateIngredientOptions{meat.Name: meat, salt.Name: salt, pepper.Name: pepper}
 
 func createDBWithIngredients(logger logger.Logger, clock clock.Clock) (*database.Database, []domain.Ingredient) {
 	db, _ := database.NewFromDatasource(":memory:", logger)
 	ingredientRepository := repository.NewIngredientRepository(db, clock, logger)
 	ctx := context.Background()
 	var ingredients = []domain.Ingredient{}
-	for _, ingredient := range []ingredientOpts{meat, salt, pepper} {
-		ing, _ := ingredientRepository.CreateIngredient(ctx, ingredient.Name, ingredient.Price, ingredient.Unit)
+	for _, ingredient := range []repository.CreateIngredientOptions{meat, salt, pepper} {
+		ing, _ := ingredientRepository.CreateIngredient(ctx, repository.CreateIngredientOptions{
+			Name:  ingredient.Name,
+			Price: ingredient.Price,
+			Unit:  ingredient.Unit,
+		})
 		ingredients = append(ingredients, ing)
 	}
 	return db, ingredients
@@ -71,17 +69,18 @@ func TestRecipeRepository(t *testing.T) {
 
 		recipeRepository := repository.NewRecipeRepository(db, clockMock, logger)
 
-		recipeIngredients := []repository.RecipeIngredientInput{
-			{
-				IngredientID: ingredients[0].ID,
-				Units:        500,
-			}, {
-				IngredientID: ingredients[2].ID,
-				Units:        5,
+		recipe, err := recipeRepository.CreateRecipe(context.Background(), repository.CreateRecipeOptions{
+			Name: "recipeName",
+			Ingredients: []repository.RecipeIngredientOptions{
+				{
+					ID:    ingredients[0].ID,
+					Units: 500,
+				}, {
+					ID:    ingredients[2].ID,
+					Units: 5,
+				},
 			},
-		}
-
-		recipe, err := recipeRepository.CreateRecipe(context.Background(), "recipeName", recipeIngredients)
+		})
 
 		if err != nil {
 			logger.Error(err, "error")
@@ -111,17 +110,24 @@ func TestRecipeRepository(t *testing.T) {
 
 		recipeRepository := repository.NewRecipeRepository(db, clock, logger)
 		existentRecipeName := "name"
-		recipeRepository.CreateRecipe(context.Background(), existentRecipeName, []repository.RecipeIngredientInput{
-			{
-				IngredientID: ingredients[0].ID,
-				Units:        500,
+
+		recipeRepository.CreateRecipe(context.Background(), repository.CreateRecipeOptions{
+			Name: existentRecipeName,
+			Ingredients: []repository.RecipeIngredientOptions{
+				{
+					ID:    ingredients[0].ID,
+					Units: 500,
+				},
 			},
 		})
 
-		_, err := recipeRepository.CreateRecipe(context.Background(), existentRecipeName, []repository.RecipeIngredientInput{
-			{
-				IngredientID: ingredients[0].ID,
-				Units:        500,
+		_, err := recipeRepository.CreateRecipe(context.Background(), repository.CreateRecipeOptions{
+			Name: existentRecipeName,
+			Ingredients: []repository.RecipeIngredientOptions{
+				{
+					ID:    ingredients[0].ID,
+					Units: 500,
+				},
 			},
 		})
 		require.Error(t, err)
@@ -137,10 +143,13 @@ func TestRecipeRepository(t *testing.T) {
 		for _, i := range ingredients {
 			unexistentIngredientID += i.ID
 		}
-		_, err := recipeRepository.CreateRecipe(context.Background(), existentRecipeName, []repository.RecipeIngredientInput{
-			{
-				IngredientID: unexistentIngredientID,
-				Units:        500,
+		_, err := recipeRepository.CreateRecipe(context.Background(), repository.CreateRecipeOptions{
+			Name: existentRecipeName,
+			Ingredients: []repository.RecipeIngredientOptions{
+				{
+					ID:    unexistentIngredientID,
+					Units: 500,
+				},
 			},
 		})
 		assert.Equal(t, repository.ErrBadOpts, errors.Unwrap(err))
@@ -152,9 +161,15 @@ func TestRecipeRepository(t *testing.T) {
 
 		recipeRepository := repository.NewRecipeRepository(db, clock, logger)
 		ctx := context.Background()
-		recipe1, err := recipeRepository.CreateRecipe(ctx, "recipe1", []repository.RecipeIngredientInput{})
+		recipe1, err := recipeRepository.CreateRecipe(context.Background(), repository.CreateRecipeOptions{
+			Name:        "recipe1",
+			Ingredients: []repository.RecipeIngredientOptions{},
+		})
 		require.NoError(t, err)
-		_, err = recipeRepository.CreateRecipe(ctx, "recipe2", []repository.RecipeIngredientInput{})
+		_, err = recipeRepository.CreateRecipe(context.Background(), repository.CreateRecipeOptions{
+			Name:        "recipe2",
+			Ingredients: []repository.RecipeIngredientOptions{},
+		})
 		require.NoError(t, err)
 
 		recipe1Get, err := recipeRepository.GetRecipe(ctx, recipe1.ID)
@@ -167,10 +182,15 @@ func TestRecipeRepository(t *testing.T) {
 		db, _ := createDBWithIngredients(logger, clock)
 
 		recipeRepository := repository.NewRecipeRepository(db, clock, logger)
-		ctx := context.Background()
-		recipe1, err := recipeRepository.CreateRecipe(ctx, "recipe1", []repository.RecipeIngredientInput{})
+		recipe1, err := recipeRepository.CreateRecipe(context.Background(), repository.CreateRecipeOptions{
+			Name:        "recipe1",
+			Ingredients: []repository.RecipeIngredientOptions{},
+		})
 		require.NoError(t, err)
-		recipe2, err := recipeRepository.CreateRecipe(ctx, "recipe2", []repository.RecipeIngredientInput{})
+		recipe2, err := recipeRepository.CreateRecipe(context.Background(), repository.CreateRecipeOptions{
+			Name:        "recipe2",
+			Ingredients: []repository.RecipeIngredientOptions{},
+		})
 		require.NoError(t, err)
 
 		assert.NotEqual(t, recipe1.ID, recipe2.ID)

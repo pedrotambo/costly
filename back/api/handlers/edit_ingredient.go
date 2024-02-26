@@ -14,13 +14,13 @@ func EditIngredientHandler(ingredientRepository repository.IngredientRepository)
 			return
 		}
 
-		editReq := IngredientRequest{}
+		editReq := repository.CreateIngredientOptions{}
 		if err := UnmarshallJSONBody(r, &editReq); err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
 
-		if err := editReq.Validate(); err != nil {
+		if err := validateIngredientOptions(editReq); err != nil {
 			vErr, ok := err.(ValidationError)
 			if ok {
 				RespondJSON(w, http.StatusBadRequest, ValidationErrorResponse{

@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"costly/core/domain"
 	"costly/core/ports/logger"
 	"costly/core/ports/repository"
 	"net/http"
@@ -11,38 +10,32 @@ type validationErrorResponse struct {
 	Errors []ValidationError `json:"errors"`
 }
 
-type IngredientRequest struct {
-	Name  string      `json:"name"`
-	Unit  domain.Unit `json:"unit"`
-	Price float64     `json:"price"`
-}
-
 var ErrBadName = NewValidationError("name", "el name debe ser valido")
 var ErrBadUnit = NewValidationError("unit", "la unidad es inválida")
 
-func (req IngredientRequest) Validate() error {
-	if req.Name == "" {
+func validateIngredientOptions(opts repository.CreateIngredientOptions) error {
+	if opts.Name == "" {
 		return ErrBadName
 	}
 
-	if req.Unit != "gr" {
+	if opts.Unit != "gr" {
 		return ErrBadUnit
 	}
 
 	return nil
 }
 
-func CreateIngredientHandler(repository repository.IngredientRepository) http.HandlerFunc {
+func CreateIngredientHandler(ingredientRepository repository.IngredientRepository) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		defer r.Body.Close()
 
-		createReq := IngredientRequest{}
-		if err := UnmarshallJSONBody(r, &createReq); err != nil {
+		createIngredientOpts := repository.CreateIngredientOptions{}
+		if err := UnmarshallJSONBody(r, &createIngredientOpts); err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
 
-		err := createReq.Validate()
+		err := validateIngredientOptions(createIngredientOpts)
 
 		if err != nil {
 			RespondJSON(w, http.StatusBadRequest, validationErrorResponse{
@@ -51,7 +44,7 @@ func CreateIngredientHandler(repository repository.IngredientRepository) http.Ha
 			return
 		}
 
-		ingredient, err := repository.CreateIngredient(r.Context(), createReq.Name, createReq.Price, createReq.Unit)
+		ingredient, err := ingredientRepository.CreateIngredient(r.Context(), createIngredientOpts)
 		if err != nil {
 			logger.Error(r.Context(), err, "error getting ingredient")
 			w.WriteHeader(http.StatusInternalServerError)

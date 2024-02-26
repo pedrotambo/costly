@@ -6,17 +6,12 @@ import (
 	"net/http"
 )
 
-type createRecipeRequest struct {
-	Name        string                             `json:"name"`
-	Ingredients []repository.RecipeIngredientInput `json:"ingredients"`
-}
-
-func (req createRecipeRequest) Validate() error {
-	if req.Name == "" {
+func validateRecipeOpts(opts repository.CreateRecipeOptions) error {
+	if opts.Name == "" {
 		return NewValidationError("name", "el name debe ser valido")
 	}
 
-	if len(req.Ingredients) == 0 {
+	if len(opts.Ingredients) == 0 {
 		return NewValidationError("ingredients", "la receta tiene que tener algún ingrediente")
 	}
 
@@ -27,14 +22,14 @@ func CreateRecipeHandler(recipeRepository repository.RecipeRepository) http.Hand
 	return func(w http.ResponseWriter, r *http.Request) {
 		defer r.Body.Close()
 
-		createReq := createRecipeRequest{}
+		createReq := repository.CreateRecipeOptions{}
 		if err := UnmarshallJSONBody(r, &createReq); err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
 
 		// TODO: refactor this out
-		if err := createReq.Validate(); err != nil {
+		if err := validateRecipeOpts(createReq); err != nil {
 			vErr, ok := err.(ValidationError)
 			if ok {
 				RespondJSON(w, http.StatusBadRequest, ValidationErrorResponse{
@@ -46,7 +41,7 @@ func CreateRecipeHandler(recipeRepository repository.RecipeRepository) http.Hand
 			return
 		}
 
-		recipe, err := recipeRepository.CreateRecipe(r.Context(), createReq.Name, createReq.Ingredients)
+		recipe, err := recipeRepository.CreateRecipe(r.Context(), createReq)
 		if err == repository.ErrBadOpts {
 			w.WriteHeader(http.StatusBadRequest)
 			return

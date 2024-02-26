@@ -12,8 +12,14 @@ import (
 type IngredientRepository interface {
 	GetIngredient(ctx context.Context, id int64) (domain.Ingredient, error)
 	GetIngredients(ctx context.Context) ([]domain.Ingredient, error)
-	CreateIngredient(ctx context.Context, name string, price float64, unit domain.Unit) (domain.Ingredient, error)
+	CreateIngredient(ctx context.Context, ingredientOpts CreateIngredientOptions) (domain.Ingredient, error)
 	EditIngredient(ctx context.Context, ingredientID int64, name string, price float64, unit domain.Unit) (domain.Ingredient, error)
+}
+
+type CreateIngredientOptions struct {
+	Name  string
+	Price float64
+	Unit  domain.Unit
 }
 
 type ingredientRepository struct {
@@ -56,10 +62,10 @@ func (r *ingredientRepository) GetIngredients(ctx context.Context) ([]domain.Ing
 	return ingredients, nil
 }
 
-func (r *ingredientRepository) CreateIngredient(ctx context.Context, name string, price float64, unit domain.Unit) (domain.Ingredient, error) {
+func (r *ingredientRepository) CreateIngredient(ctx context.Context, ingredientOpts CreateIngredientOptions) (domain.Ingredient, error) {
 	now := r.clock.Now()
 	var ingredientID int64 = -1
-	result, err := r.db.ExecContext(ctx, "INSERT INTO ingredient (name, unit, price, created_at, last_modified) VALUES (?, ?, ?, ?, ?)", name, unit, price, now, now)
+	result, err := r.db.ExecContext(ctx, "INSERT INTO ingredient (name, unit, price, created_at, last_modified) VALUES (?, ?, ?, ?, ?)", ingredientOpts.Name, ingredientOpts.Unit, ingredientOpts.Price, now, now)
 	if err != nil {
 		return domain.Ingredient{}, err
 	}
@@ -71,9 +77,9 @@ func (r *ingredientRepository) CreateIngredient(ctx context.Context, name string
 
 	return domain.Ingredient{
 		ID:           ingredientID,
-		Name:         name,
-		Price:        price,
-		Unit:         unit,
+		Name:         ingredientOpts.Name,
+		Price:        ingredientOpts.Price,
+		Unit:         ingredientOpts.Unit,
 		CreatedAt:    now,
 		LastModified: now,
 	}, nil

@@ -14,7 +14,7 @@ import (
 type RecipeRepository interface {
 	GetRecipe(ctx context.Context, id int64) (domain.Recipe, error)
 	GetRecipes(ctx context.Context) ([]domain.Recipe, error)
-	CreateRecipe(ctx context.Context, name string, ingredients []RecipeIngredientInput) (domain.Recipe, error)
+	CreateRecipe(ctx context.Context, recipeOpts CreateRecipeOptions) (domain.Recipe, error)
 }
 
 type recipeRepository struct {
@@ -23,9 +23,14 @@ type recipeRepository struct {
 	logger logger.Logger
 }
 
-type RecipeIngredientInput struct {
-	IngredientID int64 `json:"id"`
-	Units        int   `json:"units"`
+type RecipeIngredientOptions struct {
+	ID    int64
+	Units int
+}
+
+type CreateRecipeOptions struct {
+	Name        string
+	Ingredients []RecipeIngredientOptions
 }
 
 type recipeDB struct {
@@ -125,12 +130,12 @@ func (r *recipeRepository) GetRecipes(ctx context.Context) ([]domain.Recipe, err
 	return recipes, nil
 }
 
-func (r *recipeRepository) CreateRecipe(ctx context.Context, name string, ingredients []RecipeIngredientInput) (domain.Recipe, error) {
+func (r *recipeRepository) CreateRecipe(ctx context.Context, recipeOpts CreateRecipeOptions) (domain.Recipe, error) {
 	now := r.clock.Now()
 	var recipeID int64 = -1
 	recipeIngredients := []domain.RecipeIngredient{}
 	if err := r.db.WithTx(ctx, func(tx *sql.Tx) error {
-		result, err := tx.ExecContext(ctx, "INSERT INTO recipe (name, created_at, last_modified) VALUES (?, ?, ?)", name, now, now)
+		result, err := tx.ExecContext(ctx, "INSERT INTO recipe (name, created_at, last_modified) VALUES (?, ?, ?)", recipeOpts.Name, now, now)
 		if err != nil {
 			return err
 		}
@@ -140,10 +145,10 @@ func (r *recipeRepository) CreateRecipe(ctx context.Context, name string, ingred
 			return err
 		}
 
-		for _, recipeIngredient := range ingredients {
+		for _, recipeIngredient := range recipeOpts.Ingredients {
 			// check ingredient exists
 			// TODO: Make this more performant instead of querying one by one and before creating recipe
-			row := tx.QueryRowContext(ctx, "SELECT * FROM ingredient WHERE id = ?", recipeIngredient.IngredientID)
+			row := tx.QueryRowContext(ctx, "SELECT * FROM ingredient WHERE id = ?", recipeIngredient.ID)
 			var ingredient domain.Ingredient
 			err := row.Scan(&ingredient.ID, &ingredient.Name, &ingredient.Unit, &ingredient.Price, &ingredient.CreatedAt, &ingredient.LastModified)
 			if err == sql.ErrNoRows {
@@ -171,7 +176,7 @@ func (r *recipeRepository) CreateRecipe(ctx context.Context, name string, ingred
 
 	return domain.Recipe{
 		ID:           recipeID,
-		Name:         name,
+		Name:         recipeOpts.Name,
 		Ingredients:  recipeIngredients,
 		CreatedAt:    now,
 		LastModified: now,

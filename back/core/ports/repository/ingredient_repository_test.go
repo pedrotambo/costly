@@ -28,7 +28,11 @@ func TestIngredientRepository(t *testing.T) {
 
 		ingredientRepository := repository.NewIngredientRepository(db, clockMock, logger)
 
-		ingredient, err := ingredientRepository.CreateIngredient(context.Background(), "name", 10.0, domain.Gram)
+		ingredient, err := ingredientRepository.CreateIngredient(context.Background(), repository.CreateIngredientOptions{
+			Name:  "name",
+			Price: 10.0,
+			Unit:  domain.Gram,
+		})
 
 		if err != nil {
 			t.Fail()
@@ -47,9 +51,17 @@ func TestIngredientRepository(t *testing.T) {
 
 		ingredientRepository := repository.NewIngredientRepository(db, clock, logger)
 		existentIngredientName := "name"
-		ingredientRepository.CreateIngredient(context.Background(), existentIngredientName, 10.0, domain.Gram)
+		ingredientRepository.CreateIngredient(context.Background(), repository.CreateIngredientOptions{
+			Name:  existentIngredientName,
+			Price: 10.0,
+			Unit:  domain.Gram,
+		})
 
-		_, err := ingredientRepository.CreateIngredient(context.Background(), existentIngredientName, 11231235.0, domain.Gram)
+		_, err := ingredientRepository.CreateIngredient(context.Background(), repository.CreateIngredientOptions{
+			Name:  existentIngredientName,
+			Price: 1123450.0,
+			Unit:  domain.Kilogram,
+		})
 		require.Error(t, err)
 	})
 
@@ -58,9 +70,17 @@ func TestIngredientRepository(t *testing.T) {
 
 		ingredientRepository := repository.NewIngredientRepository(db, clock, logger)
 		ctx := context.Background()
-		ing1, err := ingredientRepository.CreateIngredient(ctx, "ing1", 10.0, domain.Gram)
+		ing1, err := ingredientRepository.CreateIngredient(context.Background(), repository.CreateIngredientOptions{
+			Name:  "ing1",
+			Price: 10.0,
+			Unit:  domain.Gram,
+		})
 		require.NoError(t, err)
-		_, err = ingredientRepository.CreateIngredient(ctx, "ing2", 11231235.0, domain.Gram)
+		_, err = ingredientRepository.CreateIngredient(context.Background(), repository.CreateIngredientOptions{
+			Name:  "ing2",
+			Price: 1123123123120.0,
+			Unit:  domain.Gram,
+		})
 		require.NoError(t, err)
 
 		ingr1Get, err := ingredientRepository.GetIngredient(ctx, ing1.ID)
@@ -74,9 +94,17 @@ func TestIngredientRepository(t *testing.T) {
 
 		ingredientRepository := repository.NewIngredientRepository(db, clock, logger)
 		ctx := context.Background()
-		ing1, err := ingredientRepository.CreateIngredient(ctx, "ing1", 10.0, domain.Gram)
+		ing1, err := ingredientRepository.CreateIngredient(ctx, repository.CreateIngredientOptions{
+			Name:  "ing1",
+			Price: 10.0,
+			Unit:  domain.Gram,
+		})
 		require.NoError(t, err)
-		ing2, err := ingredientRepository.CreateIngredient(ctx, "ing2", 11231235.0, domain.Gram)
+		ing2, err := ingredientRepository.CreateIngredient(ctx, repository.CreateIngredientOptions{
+			Name:  "ing2",
+			Price: 1231231231.0,
+			Unit:  domain.Gram,
+		})
 		require.NoError(t, err)
 
 		assert.NotEqual(t, ing1.ID, ing2.ID)
@@ -97,7 +125,11 @@ func TestIngredientRepository(t *testing.T) {
 
 		ingredientRepository := repository.NewIngredientRepository(db, clock, logger)
 		ctx := context.Background()
-		ing1, err := ingredientRepository.CreateIngredient(ctx, "ing1", 10.0, domain.Gram)
+		ing1, err := ingredientRepository.CreateIngredient(ctx, repository.CreateIngredientOptions{
+			Name:  "ing1",
+			Price: 10.0,
+			Unit:  domain.Gram,
+		})
 		require.NoError(t, err)
 
 		newPrice := ing1.Price + 10.0
