@@ -5,6 +5,7 @@ import (
 	"costly/core/domain"
 	"costly/core/ports/clock"
 	"costly/core/ports/database"
+	"costly/core/ports/logger"
 	"database/sql"
 	"fmt"
 	"time"
@@ -17,8 +18,9 @@ type RecipeRepository interface {
 }
 
 type recipeRepository struct {
-	db    *database.Database
-	clock clock.Clock
+	db     *database.Database
+	clock  clock.Clock
+	logger logger.Logger
 }
 
 type RecipeIngredientInput struct {
@@ -33,8 +35,8 @@ type recipeDB struct {
 	lastModified time.Time
 }
 
-func NewRecipeRepository(db *database.Database, clock clock.Clock) RecipeRepository {
-	return &recipeRepository{db, clock}
+func NewRecipeRepository(db *database.Database, clock clock.Clock, logger logger.Logger) RecipeRepository {
+	return &recipeRepository{db, clock, logger}
 }
 
 func (r *recipeRepository) GetRecipe(ctx context.Context, id int64) (domain.Recipe, error) {

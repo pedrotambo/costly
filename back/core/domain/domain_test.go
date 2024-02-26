@@ -39,6 +39,8 @@ func TestRecipeCost(t *testing.T) {
 					Units: 5,
 				},
 			},
+			CreatedAt:    now,
+			LastModified: now,
 		}
 
 		assert.Equal(t, recipe.Cost(), 500.0+5*10)

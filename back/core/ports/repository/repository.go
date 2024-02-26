@@ -18,6 +18,6 @@ var ErrBadOpts = errors.New("bad create entity options")
 func New(db *database.Database, clock clock.Clock, logger logger.Logger) *Repository {
 	return &Repository{
 		NewIngredientRepository(db, clock, logger),
-		NewRecipeRepository(db, clock),
+		NewRecipeRepository(db, clock, logger),
 	}
 }

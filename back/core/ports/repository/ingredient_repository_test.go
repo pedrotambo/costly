@@ -7,33 +7,18 @@ import (
 	"costly/core/ports/database"
 	"costly/core/ports/logger"
 	"costly/core/ports/repository"
-	"fmt"
 	"testing"
 	"time"
 
 	_ "github.com/mattn/go-sqlite3"
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 )
-
-type clockMock struct {
-	mock.Mock
-}
-
-func (m *clockMock) Now() time.Time {
-	args := m.Called()
-	value := args.Get(0)
-	now, ok := value.(time.Time)
-	if !ok {
-		panic(fmt.Errorf("Error getting now"))
-	}
-	return now
-}
 
 func TestIngredientRepository(t *testing.T) {
 
 	logger, _ := logger.NewLogger("debug")
+	clock := clock.New()
 
 	t.Run("should create an ingredient if non existent", func(t *testing.T) {
 		db, _ := database.NewFromDatasource(":memory:", logger)
@@ -60,8 +45,6 @@ func TestIngredientRepository(t *testing.T) {
 	t.Run("should fail to create an ingredient if existent", func(t *testing.T) {
 		db, _ := database.NewFromDatasource(":memory:", logger)
 
-		clock := clock.New()
-
 		ingredientRepository := repository.NewIngredientRepository(db, clock, logger)
 		existentIngredientName := "name"
 		ingredientRepository.CreateIngredient(context.Background(), existentIngredientName, 10.0, domain.Gram)
@@ -72,7 +55,6 @@ func TestIngredientRepository(t *testing.T) {
 
 	t.Run("should get correct ingredient if existent", func(t *testing.T) {
 		db, _ := database.NewFromDatasource(":memory:", logger)
-		clock := clock.New()
 
 		ingredientRepository := repository.NewIngredientRepository(db, clock, logger)
 		ctx := context.Background()
@@ -89,7 +71,6 @@ func TestIngredientRepository(t *testing.T) {
 
 	t.Run("should assign different IDs to different ingredients", func(t *testing.T) {
 		db, _ := database.NewFromDatasource(":memory:", logger)
-		clock := clock.New()
 
 		ingredientRepository := repository.NewIngredientRepository(db, clock, logger)
 		ctx := context.Background()
@@ -103,7 +84,6 @@ func TestIngredientRepository(t *testing.T) {
 
 	t.Run("should return error when requesting an inexistent ingredient", func(t *testing.T) {
 		db, _ := database.NewFromDatasource(":memory:", logger)
-		clock := clock.New()
 		ingredientRepository := repository.NewIngredientRepository(db, clock, logger)
 
 		_, err := ingredientRepository.GetIngredient(context.Background(), 123)
@@ -112,9 +92,8 @@ func TestIngredientRepository(t *testing.T) {
 		assert.Equal(t, err, repository.ErrNotFound)
 	})
 
-	t.Run("should edit ingredient price correctly", func(t *testing.T) {
+	t.Run("should edit ingredient correctly", func(t *testing.T) {
 		db, _ := database.NewFromDatasource(":memory:", logger)
-		clock := clock.New()
 
 		ingredientRepository := repository.NewIngredientRepository(db, clock, logger)
 		ctx := context.Background()
