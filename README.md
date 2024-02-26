@@ -1,6 +1,6 @@
 # Costly
 
-Welcome to the Costly project! This software aims to assist restaurants in calculating the costs of their recipes to optimize pricing and manage expenses effectively.
+Welcome to the Costly project! This software aims to assist restaurants in calculating the costs of their recipes to optimize pricing and manage expenses effectively. This project is still in projects and might evolve in a bigger system with more functionalities or become part of multiple micro-services aimed to help restaurant management.
 
 ## Table of Contents
 
