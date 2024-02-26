@@ -1,10 +1,9 @@
 package handlers
 
 import (
+	"costly/core/ports/logger"
 	"costly/core/ports/repository"
 	"net/http"
-
-	"github.com/rs/zerolog"
 )
 
 type createRecipeRequest struct {
@@ -52,7 +51,7 @@ func CreateRecipeHandler(recipeRepository repository.RecipeRepository) http.Hand
 			w.WriteHeader(http.StatusBadRequest)
 			return
 		} else if err != nil {
-			zerolog.Ctx(r.Context()).Error().Err(err).Msg("error creating recipe")
+			logger.Error(r.Context(), err, "error creating recipe")
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}

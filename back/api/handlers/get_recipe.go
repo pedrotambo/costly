@@ -2,12 +2,12 @@ package handlers
 
 import (
 	"costly/core/domain"
+	"costly/core/ports/logger"
 	"costly/core/ports/repository"
 	"net/http"
 	"strconv"
 
 	"github.com/go-chi/chi/v5"
-	"github.com/rs/zerolog"
 )
 
 type RecipeResponse struct {
@@ -29,7 +29,7 @@ func GetRecipeHandler(recipeRepository repository.RecipeRepository) http.Handler
 			w.WriteHeader(http.StatusNotFound)
 			return
 		} else if err != nil {
-			zerolog.Ctx(r.Context()).Error().Err(err).Msg("error getting recipe")
+			logger.Error(r.Context(), err, "error getting recipe")
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}

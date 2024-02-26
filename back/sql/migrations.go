@@ -1,6 +1,7 @@
 package sql
 
 import (
+	"costly/core/ports/logger"
 	"database/sql"
 	"embed"
 	"errors"
@@ -15,8 +16,8 @@ import (
 var fs embed.FS
 
 // RunMigrations receives a *sql.DB instance with a MySQL backend, and runs the appropriated migrations.
-func RunMigrations(db *sql.DB) (string, error) {
-	fmt.Println("running migrations...")
+func RunMigrations(db *sql.DB, logger logger.Logger) (string, error) {
+	logger.Info("running migrations")
 
 	driver, err := sqlite3.WithInstance(db, &sqlite3.Config{
 		MigrationsTable: "migrations",
@@ -41,6 +42,6 @@ func RunMigrations(db *sql.DB) (string, error) {
 
 	version, _, _ := migrator.Version()
 
-	fmt.Println("migrations run...")
+	logger.Info("migrations run")
 	return fmt.Sprint(version), nil
 }

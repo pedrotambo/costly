@@ -11,11 +11,11 @@ import (
 	"costly/api"
 	"costly/core/ports/clock"
 	"costly/core/ports/database"
+	"costly/core/ports/logger"
 	"costly/core/ports/repository"
 
 	"github.com/go-chi/chi/v5"
 	_ "github.com/mattn/go-sqlite3"
-	"github.com/rs/zerolog"
 )
 
 func main() {
@@ -24,7 +24,8 @@ func main() {
 		fmt.Printf("Could not load configuration. Err: %s\n", err)
 		os.Exit(1)
 	}
-	fmt.Println(config)
+
+	fmt.Println(*config)
 
 	components, err := initComponents(config)
 
@@ -41,26 +42,26 @@ func main() {
 		<-signalChannel
 
 		if err := components.server.Shutdown(context.Background()); err != nil {
-			components.logger.Error().Err(err).Msg("could not gracefully shutdown server")
+			components.logger.Error(err, "could not gracefully shutdown server")
 		}
 
 		done <- true
 	}()
 
 	if err := components.server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-		components.logger.Error().Err(err).Msg("could not start server")
+		components.logger.Error(err, "could not start server")
 		os.Exit(1)
 	}
 
 	<-done
 
-	components.logger.Info().Msg("app stopped")
+	components.logger.Info("app stopped")
 
 	fmt.Println(done)
 }
 
 type AppComponents struct {
-	logger     *zerolog.Logger
+	logger     logger.Logger
 	database   *database.Database
 	router     chi.Router
 	server     *http.Server
@@ -69,22 +70,19 @@ type AppComponents struct {
 }
 
 func initComponents(config *Config) (AppComponents, error) {
-	zLevel, err := zerolog.ParseLevel(config.LogLevel)
+	logger, err := logger.NewLogger(config.LogLevel)
 	if err != nil {
-		fmt.Printf("Could not parse log level. Err: %s\n", err)
-		os.Exit(1)
-	}
-	logger := zerolog.New(os.Stderr).Level(zLevel).With().Timestamp().Logger()
-
-	logger.Info().Msg("Running server...")
-
-	database, err := database.New(config.Database.ConnectionString)
-	if err != nil {
-		logger.Error().Err(err).Msg("could not initialize database")
+		fmt.Printf("Could not create logger. Err: %s\n", err)
 		os.Exit(1)
 	}
 
-	// logger.Info().Str("version", build.Version).Msg("app started")
+	logger.Info("Running server...")
+
+	database, err := database.New(config.Database.ConnectionString, logger)
+	if err != nil {
+		logger.Error(err, "could not initialize database")
+		os.Exit(1)
+	}
 
 	loggerInjectorMiddleware := api.Middleware(func(h http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -98,7 +96,7 @@ func initComponents(config *Config) (AppComponents, error) {
 	authSupport.PrintDebug(logger)
 
 	clock := clock.New()
-	repository := repository.New(database, clock)
+	repository := repository.New(database, clock, logger)
 	router := api.NewRouter(repository, authSupport, loggerInjectorMiddleware)
 	server := http.Server{
 		Addr:    config.ListenAddress,
@@ -106,7 +104,7 @@ func initComponents(config *Config) (AppComponents, error) {
 	}
 
 	return AppComponents{
-		logger:     &logger,
+		logger:     logger,
 		database:   database,
 		router:     router,
 		server:     &server,

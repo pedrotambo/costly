@@ -5,6 +5,9 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strconv"
+
+	"github.com/go-chi/chi/v5"
 )
 
 type ValidationError struct {
@@ -29,12 +32,10 @@ func RespondJSON(w http.ResponseWriter, status int, body interface{}) {
 	w.WriteHeader(status)
 	jsonData, err := json.Marshal(body)
 	if err != nil {
-		// zerolog.Ctx(r.Context()).Error().Err(err).Msg("error getting recipe")
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 	w.Write(jsonData)
-	// json.NewEncoder(w).Encode(body)
 }
 
 // UnmarshallJSONBody reads the request body and unmarshalls it into the given interface.
@@ -49,4 +50,14 @@ func UnmarshallJSONBody(r *http.Request, v interface{}) error {
 	}
 
 	return nil
+}
+
+// GetUriID returns the ID from the URL path parameter.
+func GetUriID(r *http.Request, key string) (int, error) {
+	idStr := chi.URLParam(r, key)
+	id, err := strconv.Atoi(idStr)
+	if err != nil {
+		return 0, err
+	}
+	return id, nil
 }

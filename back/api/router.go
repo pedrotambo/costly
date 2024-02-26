@@ -44,6 +44,7 @@ func NewRouter(repository *repository.Repository, as *AuthSupport, middlewares .
 		r.Get("/ingredients", handlers.GetIngredientsHandler(repository))
 		r.Post("/ingredients", handlers.CreateIngredientHandler(repository))
 		r.Get("/ingredients/{ingredientID}", handlers.GetIngredientHandler(repository))
+		r.Put("/ingredients/{ingredientID}", handlers.EditIngredientHandler(repository))
 
 		// recipes
 		r.Post("/recipes", handlers.CreateRecipeHandler(repository))

@@ -2,17 +2,16 @@ package handlers
 
 import (
 	"costly/core/domain"
+	"costly/core/ports/logger"
 	"costly/core/ports/repository"
 	"net/http"
-
-	"github.com/rs/zerolog"
 )
 
 type validationErrorResponse struct {
 	Errors []ValidationError `json:"errors"`
 }
 
-type createIngredientRequest struct {
+type IngredientRequest struct {
 	Name  string      `json:"name"`
 	Unit  domain.Unit `json:"unit"`
 	Price float64     `json:"price"`
@@ -21,7 +20,7 @@ type createIngredientRequest struct {
 var ErrBadName = NewValidationError("name", "el name debe ser valido")
 var ErrBadUnit = NewValidationError("unit", "la unidad es inválida")
 
-func (req createIngredientRequest) validate() error {
+func (req IngredientRequest) Validate() error {
 	if req.Name == "" {
 		return ErrBadName
 	}
@@ -37,13 +36,13 @@ func CreateIngredientHandler(repository repository.IngredientRepository) http.Ha
 	return func(w http.ResponseWriter, r *http.Request) {
 		defer r.Body.Close()
 
-		createReq := createIngredientRequest{}
+		createReq := IngredientRequest{}
 		if err := UnmarshallJSONBody(r, &createReq); err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
 
-		err := createReq.validate()
+		err := createReq.Validate()
 
 		if err != nil {
 			RespondJSON(w, http.StatusBadRequest, validationErrorResponse{
@@ -54,7 +53,7 @@ func CreateIngredientHandler(repository repository.IngredientRepository) http.Ha
 
 		ingredient, err := repository.CreateIngredient(r.Context(), createReq.Name, createReq.Price, createReq.Unit)
 		if err != nil {
-			zerolog.Ctx(r.Context()).Error().Err(err).Msg("error creating ingredient")
+			logger.Error(r.Context(), err, "error getting ingredient")
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}

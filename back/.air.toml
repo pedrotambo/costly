@@ -5,7 +5,8 @@ tmp_dir = "tmp"
 [build]
 	args_bin = [
 	"--db.connection-string=\"./test.db\"",
-	"-listen-addr=\":1234\""
+	"-listen-addr=\":1234\"",
+  "-log.level=debug"
 	]
   bin = "./tmp/main"
   cmd = "go build -o ./tmp/main ."

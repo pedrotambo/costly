@@ -1,10 +1,9 @@
 package handlers
 
 import (
+	"costly/core/ports/logger"
 	"costly/core/ports/repository"
 	"net/http"
-
-	"github.com/rs/zerolog"
 )
 
 func GetIngredientsHandler(ingredientRepository repository.IngredientRepository) http.HandlerFunc {
@@ -14,7 +13,7 @@ func GetIngredientsHandler(ingredientRepository repository.IngredientRepository)
 			w.WriteHeader(http.StatusNotFound)
 			return
 		} else if err != nil {
-			zerolog.Ctx(r.Context()).Error().Err(err).Msg("error getting ingredient")
+			logger.Error(r.Context(), err, "error getting ingredients")
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}

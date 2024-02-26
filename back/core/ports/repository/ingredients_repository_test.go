@@ -5,6 +5,7 @@ import (
 	"costly/core/domain"
 	"costly/core/ports/clock"
 	"costly/core/ports/database"
+	"costly/core/ports/logger"
 	"costly/core/ports/repository"
 	"fmt"
 	"testing"
@@ -32,13 +33,15 @@ func (m *clockMock) Now() time.Time {
 
 func TestIngredientRepository(t *testing.T) {
 
+	logger, _ := logger.NewLogger("debug")
+
 	t.Run("should create an ingredient if non existent", func(t *testing.T) {
-		db, _ := database.NewFromDatasource(":memory:")
+		db, _ := database.NewFromDatasource(":memory:", logger)
 		clockMock := new(clockMock)
 		now := time.UnixMilli(12345).UTC()
 		clockMock.On("Now").Return(now)
 
-		ingredientRepository := repository.NewIngredientRepository(db, clockMock)
+		ingredientRepository := repository.NewIngredientRepository(db, clockMock, logger)
 
 		ingredient, err := ingredientRepository.CreateIngredient(context.Background(), "name", 10.0, domain.Gram)
 
@@ -55,11 +58,11 @@ func TestIngredientRepository(t *testing.T) {
 	})
 
 	t.Run("should fail to create an ingredient if existent", func(t *testing.T) {
-		db, _ := database.NewFromDatasource(":memory:")
+		db, _ := database.NewFromDatasource(":memory:", logger)
 
 		clock := clock.New()
 
-		ingredientRepository := repository.NewIngredientRepository(db, clock)
+		ingredientRepository := repository.NewIngredientRepository(db, clock, logger)
 		existentIngredientName := "name"
 		ingredientRepository.CreateIngredient(context.Background(), existentIngredientName, 10.0, domain.Gram)
 
@@ -68,10 +71,10 @@ func TestIngredientRepository(t *testing.T) {
 	})
 
 	t.Run("should get correct ingredient if existent", func(t *testing.T) {
-		db, _ := database.NewFromDatasource(":memory:")
+		db, _ := database.NewFromDatasource(":memory:", logger)
 		clock := clock.New()
 
-		ingredientRepository := repository.NewIngredientRepository(db, clock)
+		ingredientRepository := repository.NewIngredientRepository(db, clock, logger)
 		ctx := context.Background()
 		ing1, err := ingredientRepository.CreateIngredient(ctx, "ing1", 10.0, domain.Gram)
 		require.NoError(t, err)
@@ -85,10 +88,10 @@ func TestIngredientRepository(t *testing.T) {
 	})
 
 	t.Run("should assign different IDs to different ingredients", func(t *testing.T) {
-		db, _ := database.NewFromDatasource(":memory:")
+		db, _ := database.NewFromDatasource(":memory:", logger)
 		clock := clock.New()
 
-		ingredientRepository := repository.NewIngredientRepository(db, clock)
+		ingredientRepository := repository.NewIngredientRepository(db, clock, logger)
 		ctx := context.Background()
 		ing1, err := ingredientRepository.CreateIngredient(ctx, "ing1", 10.0, domain.Gram)
 		require.NoError(t, err)
@@ -99,13 +102,35 @@ func TestIngredientRepository(t *testing.T) {
 	})
 
 	t.Run("should return error when requesting an inexistent ingredient", func(t *testing.T) {
-		db, _ := database.NewFromDatasource(":memory:")
+		db, _ := database.NewFromDatasource(":memory:", logger)
 		clock := clock.New()
-		ingredientRepository := repository.NewIngredientRepository(db, clock)
+		ingredientRepository := repository.NewIngredientRepository(db, clock, logger)
 
 		_, err := ingredientRepository.GetIngredient(context.Background(), 123)
 
 		require.Error(t, err)
 		assert.Equal(t, err, repository.ErrNotFound)
+	})
+
+	t.Run("should edit ingredient price correctly", func(t *testing.T) {
+		db, _ := database.NewFromDatasource(":memory:", logger)
+		clock := clock.New()
+
+		ingredientRepository := repository.NewIngredientRepository(db, clock, logger)
+		ctx := context.Background()
+		ing1, err := ingredientRepository.CreateIngredient(ctx, "ing1", 10.0, domain.Gram)
+		require.NoError(t, err)
+
+		newPrice := ing1.Price + 10.0
+		newName := "modifiedIngr1"
+		newUnit := domain.Kilogram
+		ingredientRepository.EditIngredient(ctx, ing1.ID, newName, newPrice, newUnit)
+
+		modifiedIngredient, err := ingredientRepository.GetIngredient(ctx, ing1.ID)
+		require.NoError(t, err)
+
+		assert.Equal(t, modifiedIngredient.Name, newName)
+		assert.Equal(t, modifiedIngredient.Price, newPrice)
+		assert.Equal(t, modifiedIngredient.Unit, newUnit)
 	})
 }

@@ -1,9 +1,10 @@
 package api
 
 import (
+	"costly/core/ports/logger"
+
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/jwtauth"
-	"github.com/rs/zerolog"
 )
 
 type AuthSupport struct {
@@ -22,9 +23,9 @@ func (as *AuthSupport) UseMiddlewares(r chi.Router) {
 	r.Use(jwtauth.Authenticator)
 }
 
-func (as *AuthSupport) PrintDebug(logger zerolog.Logger) {
+func (as *AuthSupport) PrintDebug(log logger.Logger) {
 	// For debugging/example purposes, we generate and print
 	// a sample jwt token with claims `user_id:123` here:
 	_, tokenString, _ := tokenAuth.Encode(map[string]interface{}{"user_id": 1})
-	logger.Info().Str("token", tokenString).Msg("a sample jwt token")
+	log.Info("a sample jwt token", logger.Field{Key: "token", Value: tokenString})
 }
