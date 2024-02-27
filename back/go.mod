@@ -2,10 +2,12 @@ module costly
 
 go 1.21.2
 
-require github.com/stretchr/testify v1.8.4
+require (
+	github.com/go-chi/chi/v5 v5.0.12
+	github.com/stretchr/testify v1.8.4
+)
 
 require (
-	github.com/go-chi/chi/v5 v5.0.12 // indirect
 	github.com/goccy/go-json v0.9.11 // indirect
 	github.com/hashicorp/errwrap v1.1.0 // indirect
 	github.com/hashicorp/go-multierror v1.1.1 // indirect
