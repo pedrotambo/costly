@@ -6,8 +6,6 @@ import (
 	"costly/core/ports/repository"
 	"net/http"
 	"strconv"
-
-	"github.com/go-chi/chi/v5"
 )
 
 type RecipeResponse struct {
@@ -17,7 +15,7 @@ type RecipeResponse struct {
 
 func GetRecipeHandler(recipeRepository repository.RecipeRepository) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		recipeIDstr := chi.URLParam(r, "recipeID")
+		recipeIDstr := r.PathValue("recipeID")
 		recipeID, err := strconv.ParseInt(recipeIDstr, 10, 64)
 		if err != nil {
 			w.WriteHeader(http.StatusBadRequest)

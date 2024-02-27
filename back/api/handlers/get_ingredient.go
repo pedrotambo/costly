@@ -5,13 +5,11 @@ import (
 	"costly/core/ports/repository"
 	"net/http"
 	"strconv"
-
-	"github.com/go-chi/chi/v5"
 )
 
 func GetIngredientHandler(ingredientRepository repository.IngredientRepository) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		ingredientIDstr := chi.URLParam(r, "ingredientID")
+		ingredientIDstr := r.PathValue("ingredientID")
 		ingredientID, err := strconv.ParseInt(ingredientIDstr, 10, 64)
 		if err != nil {
 			w.WriteHeader(http.StatusBadRequest)
