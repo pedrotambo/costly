@@ -51,6 +51,6 @@ func CreateIngredientHandler(ingredientRepository repository.IngredientRepositor
 			return
 		}
 
-		RespondJSON(w, 201, ingredient)
+		RespondJSON(w, http.StatusCreated, ingredient)
 	}
 }
