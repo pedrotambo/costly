@@ -14,7 +14,6 @@ import (
 	"costly/core/ports/logger"
 	"costly/core/ports/repository"
 
-	"github.com/go-chi/chi/v5"
 	_ "github.com/mattn/go-sqlite3"
 )
 
@@ -63,7 +62,6 @@ func main() {
 type AppComponents struct {
 	logger     logger.Logger
 	database   *database.Database
-	router     chi.Router
 	server     *http.Server
 	clock      clock.Clock
 	repository *repository.Repository
@@ -106,7 +104,6 @@ func initComponents(config *Config) (AppComponents, error) {
 	return AppComponents{
 		logger:     logger,
 		database:   database,
-		router:     router,
 		server:     &server,
 		clock:      clock,
 		repository: repository,

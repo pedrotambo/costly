@@ -4,11 +4,13 @@ import (
 	"costly/core/ports/logger"
 	"costly/core/ports/repository"
 	"net/http"
+	"strconv"
 )
 
 func EditIngredientHandler(ingredientRepository repository.IngredientRepository) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		ingredientID, err := GetUriID(r, "ingredientID")
+		ingredientIDstr := r.PathValue("ingredientID")
+		ingredientID, err := strconv.ParseInt(ingredientIDstr, 10, 64)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return

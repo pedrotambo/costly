@@ -20,7 +20,7 @@ func init() {
 
 type Middleware func(http.Handler) http.Handler
 
-func NewRouter(repository *repository.Repository, as *AuthSupport, middlewares ...Middleware) chi.Router {
+func NewRouter(repository *repository.Repository, as *AuthSupport, middlewares ...Middleware) http.Handler {
 	r := chi.NewRouter()
 
 	for _, m := range middlewares {
@@ -39,7 +39,8 @@ func NewRouter(repository *repository.Repository, as *AuthSupport, middlewares .
 
 	// authenticated routes
 	r.Group(func(r chi.Router) {
-		as.UseMiddlewares(r)
+		// as.UseMiddlewares(r)
+		r.Use(as.middleware)
 		// ingredients
 		r.Get("/ingredients", handlers.GetIngredientsHandler(repository))
 		r.Post("/ingredients", handlers.CreateIngredientHandler(repository))

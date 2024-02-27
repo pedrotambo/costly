@@ -2,25 +2,27 @@ package api
 
 import (
 	"costly/core/ports/logger"
+	"net/http"
 
-	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/jwtauth"
 )
 
 type AuthSupport struct {
-	jwt *jwtauth.JWTAuth
+	jwt        *jwtauth.JWTAuth
+	middleware Middleware
 }
 
 func NewAuthSupport(secret []byte) *AuthSupport {
+	h1 := jwtauth.Verifier(tokenAuth)
+	h2 := jwtauth.Authenticator
 	return &AuthSupport{
 		jwt: jwtauth.New("HS256", secret, nil),
+		middleware: Middleware(func(h http.Handler) http.Handler {
+			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				h1(h2(h)).ServeHTTP(w, r)
+			})
+		}),
 	}
-}
-
-// UseMiddlewares applies the authentication support middlewares to the given router.
-func (as *AuthSupport) UseMiddlewares(r chi.Router) {
-	r.Use(jwtauth.Verifier(tokenAuth))
-	r.Use(jwtauth.Authenticator)
 }
 
 func (as *AuthSupport) PrintDebug(log logger.Logger) {

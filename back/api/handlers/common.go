@@ -5,9 +5,6 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"strconv"
-
-	"github.com/go-chi/chi/v5"
 )
 
 type ValidationError struct {
@@ -50,14 +47,4 @@ func UnmarshallJSONBody(r *http.Request, v interface{}) error {
 	}
 
 	return nil
-}
-
-// GetUriID returns the ID from the URL path parameter.
-func GetUriID(r *http.Request, key string) (int, error) {
-	idStr := chi.URLParam(r, key)
-	id, err := strconv.Atoi(idStr)
-	if err != nil {
-		return 0, err
-	}
-	return id, nil
 }

@@ -25,7 +25,6 @@ func GetIngredientHandler(ingredientRepository repository.IngredientRepository) 
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
-
 		RespondJSON(w, 200, ingredient)
 	}
 }
