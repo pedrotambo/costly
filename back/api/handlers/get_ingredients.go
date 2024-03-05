@@ -9,10 +9,7 @@ import (
 func GetIngredientsHandler(ingredientRepository repository.IngredientRepository) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ingredients, err := ingredientRepository.GetIngredients(r.Context())
-		if err == repository.ErrNotFound {
-			w.WriteHeader(http.StatusNotFound)
-			return
-		} else if err != nil {
+		if err != nil {
 			logger.Error(r.Context(), err, "error getting ingredients")
 			w.WriteHeader(http.StatusInternalServerError)
 			return

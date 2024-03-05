@@ -18,8 +18,7 @@ func GetRecipeHandler(recipeRepository repository.RecipeRepository) http.Handler
 		recipeIDstr := r.PathValue("recipeID")
 		recipeID, err := strconv.ParseInt(recipeIDstr, 10, 64)
 		if err != nil {
-			w.WriteHeader(http.StatusBadRequest)
-			return
+			RespondJSON(w, http.StatusBadRequest, ErrBadID)
 		}
 
 		recipe, err := recipeRepository.GetRecipe(r.Context(), recipeID)

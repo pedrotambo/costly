@@ -12,8 +12,7 @@ func GetIngredientHandler(ingredientRepository repository.IngredientRepository) 
 		ingredientIDstr := r.PathValue("ingredientID")
 		ingredientID, err := strconv.ParseInt(ingredientIDstr, 10, 64)
 		if err != nil {
-			w.WriteHeader(http.StatusBadRequest)
-			return
+			RespondJSON(w, http.StatusBadRequest, ErrBadID)
 		}
 
 		ingredient, err := ingredientRepository.GetIngredient(r.Context(), ingredientID)

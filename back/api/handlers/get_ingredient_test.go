@@ -73,8 +73,13 @@ func TestHandleGetIngredient(t *testing.T) {
 		{
 			name:            "should get error if bad request id",
 			ingredientIDstr: "badID",
-			expected:        "",
-			statusCode:      http.StatusBadRequest,
+			expected: `{
+				"error": {
+					"code":"INVALID_INPUT",
+					"message":"id is invalid"
+				}
+			}`,
+			statusCode: http.StatusBadRequest,
 		},
 	}
 
