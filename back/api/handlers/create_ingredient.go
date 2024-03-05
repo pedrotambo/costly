@@ -6,41 +6,34 @@ import (
 	"net/http"
 )
 
-type validationErrorResponse struct {
-	Errors []ValidationError `json:"errors"`
-}
-
-var ErrBadName = NewValidationError("name", "el name debe ser valido")
-var ErrBadUnit = NewValidationError("unit", "la unidad es inválida")
-
-func validateIngredientOptions(opts repository.CreateIngredientOptions) error {
-	if opts.Name == "" {
-		return ErrBadName
+func parseIngredientOptions(r *http.Request) (repository.CreateIngredientOptions, error) {
+	createIngredientOpts := repository.CreateIngredientOptions{}
+	if err := UnmarshallJSONBody(r, &createIngredientOpts); err != nil {
+		return repository.CreateIngredientOptions{}, ErrBadJson
 	}
 
-	if opts.Unit != "gr" {
-		return ErrBadUnit
+	if createIngredientOpts.Name == "" {
+		return repository.CreateIngredientOptions{}, ErrBadName
 	}
 
-	return nil
+	if createIngredientOpts.Unit != "gr" {
+		return repository.CreateIngredientOptions{}, ErrBadUnit
+	}
+
+	if createIngredientOpts.Price <= 0 {
+		return repository.CreateIngredientOptions{}, ErrBadPrice
+	}
+
+	return createIngredientOpts, nil
 }
 
 func CreateIngredientHandler(ingredientRepository repository.IngredientRepository) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		defer r.Body.Close()
 
-		createIngredientOpts := repository.CreateIngredientOptions{}
-		if err := UnmarshallJSONBody(r, &createIngredientOpts); err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
-			return
-		}
-
-		err := validateIngredientOptions(createIngredientOpts)
-
+		createIngredientOpts, err := parseIngredientOptions(r)
 		if err != nil {
-			RespondJSON(w, http.StatusBadRequest, validationErrorResponse{
-				Errors: []ValidationError{err.(ValidationError)},
-			})
+			RespondJSON(w, http.StatusBadRequest, err)
 			return
 		}
 

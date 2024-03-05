@@ -12,30 +12,17 @@ func EditIngredientHandler(ingredientRepository repository.IngredientRepository)
 		ingredientIDstr := r.PathValue("ingredientID")
 		ingredientID, err := strconv.ParseInt(ingredientIDstr, 10, 64)
 		if err != nil {
-			http.Error(w, err.Error(), http.StatusBadRequest)
+			RespondJSON(w, http.StatusBadRequest, ErrBadID)
 			return
 		}
 
-		editReq := repository.CreateIngredientOptions{}
-		if err := UnmarshallJSONBody(r, &editReq); err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
+		editIngredientOpts, err := parseIngredientOptions(r)
+		if err != nil {
+			RespondJSON(w, http.StatusBadRequest, err)
 			return
 		}
 
-		if err := validateIngredientOptions(editReq); err != nil {
-			vErr, ok := err.(ValidationError)
-			if ok {
-				RespondJSON(w, http.StatusBadRequest, ValidationErrorResponse{
-					Errors: []ValidationError{vErr},
-				})
-				return
-			}
-
-			http.Error(w, err.Error(), http.StatusBadRequest)
-			return
-		}
-
-		_, err = ingredientRepository.EditIngredient(r.Context(), int64(ingredientID), editReq.Name, editReq.Price, editReq.Unit)
+		_, err = ingredientRepository.EditIngredient(r.Context(), int64(ingredientID), editIngredientOpts.Name, editIngredientOpts.Price, editIngredientOpts.Unit)
 		if err == repository.ErrNotFound {
 			w.WriteHeader(http.StatusNotFound)
 			return

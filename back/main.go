@@ -82,20 +82,12 @@ func initComponents(config *Config) (AppComponents, error) {
 		os.Exit(1)
 	}
 
-	loggerInjectorMiddleware := api.Middleware(func(h http.Handler) http.Handler {
-		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			ctx := logger.WithContext(r.Context())
-			h.ServeHTTP(w, r.WithContext(ctx))
-		})
-	})
-
-	authSupport := api.NewAuthSupport([]byte(config.AuthSecret))
-	// TODO: Add some flag to enable just in dev
-	authSupport.PrintDebug(logger)
+	loggerMiddleware := api.NewLoggerMiddleware(logger)
+	authMiddleware := api.NewAuthMiddleware([]byte(config.AuthSecret), logger)
 
 	clock := clock.New()
 	repository := repository.New(database, clock, logger)
-	router := api.NewRouter(repository, authSupport, loggerInjectorMiddleware)
+	router := api.NewRouter(repository, authMiddleware, loggerMiddleware)
 	server := http.Server{
 		Addr:    config.ListenAddress,
 		Handler: router,

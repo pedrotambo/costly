@@ -2,6 +2,7 @@ package logger
 
 import (
 	"context"
+	"fmt"
 	"os"
 
 	"github.com/rs/zerolog"
@@ -36,15 +37,16 @@ func NewLogger(logLevel string) (Logger, error) {
 }
 
 func (l *logger) Info(message string, fields ...Field) {
-	addFields(l.internalLogger.Info()).Msg(message)
+	fmt.Println(message)
+	addFields(l.internalLogger.Info(), fields...).Msg(message)
 }
 
 func (l *logger) Debug(message string, fields ...Field) {
-	addFields(l.internalLogger.Debug()).Msg(message)
+	addFields(l.internalLogger.Debug(), fields...).Msg(message)
 }
 
 func (l *logger) Error(err error, message string, fields ...Field) {
-	addFields(l.internalLogger.Error()).Err(err).Msg(message)
+	addFields(l.internalLogger.Error(), fields...).Err(err).Msg(message)
 }
 
 func addFields(logEvent *zerolog.Event, fields ...Field) *zerolog.Event {

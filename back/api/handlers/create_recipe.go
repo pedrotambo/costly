@@ -6,42 +6,33 @@ import (
 	"net/http"
 )
 
-func validateRecipeOpts(opts repository.CreateRecipeOptions) error {
-	if opts.Name == "" {
-		return NewValidationError("name", "el name debe ser valido")
+func parseRecipeOptions(r *http.Request) (repository.CreateRecipeOptions, error) {
+	createRecipeOpts := repository.CreateRecipeOptions{}
+	if err := UnmarshallJSONBody(r, &createRecipeOpts); err != nil {
+		return repository.CreateRecipeOptions{}, ErrBadJson
+	}
+	if createRecipeOpts.Name == "" {
+		return repository.CreateRecipeOptions{}, ErrBadName
 	}
 
-	if len(opts.Ingredients) == 0 {
-		return NewValidationError("ingredients", "la receta tiene que tener algún ingrediente")
+	if len(createRecipeOpts.Ingredients) == 0 {
+		return repository.CreateRecipeOptions{}, ErrBadIngrs
 	}
 
-	return nil
+	return createRecipeOpts, nil
 }
 
 func CreateRecipeHandler(recipeRepository repository.RecipeRepository) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		defer r.Body.Close()
 
-		createReq := repository.CreateRecipeOptions{}
-		if err := UnmarshallJSONBody(r, &createReq); err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
+		createRecipeOptions, err := parseRecipeOptions(r)
+		if err != nil {
+			RespondJSON(w, http.StatusBadRequest, err)
 			return
 		}
 
-		// TODO: refactor this out
-		if err := validateRecipeOpts(createReq); err != nil {
-			vErr, ok := err.(ValidationError)
-			if ok {
-				RespondJSON(w, http.StatusBadRequest, ValidationErrorResponse{
-					Errors: []ValidationError{vErr},
-				})
-				return
-			}
-			http.Error(w, err.Error(), http.StatusBadRequest)
-			return
-		}
-
-		recipe, err := recipeRepository.CreateRecipe(r.Context(), createReq)
+		recipe, err := recipeRepository.CreateRecipe(r.Context(), createRecipeOptions)
 		if err == repository.ErrBadOpts {
 			w.WriteHeader(http.StatusBadRequest)
 			return
