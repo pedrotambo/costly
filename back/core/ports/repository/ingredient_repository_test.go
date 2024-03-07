@@ -132,16 +132,18 @@ func TestIngredientRepository(t *testing.T) {
 		})
 		require.NoError(t, err)
 
-		newPrice := ing1.Price + 10.0
-		newName := "modifiedIngr1"
-		newUnit := domain.Kilogram
-		ingredientRepository.EditIngredient(ctx, ing1.ID, newName, newPrice, newUnit)
+		newIngredientOpts := repository.CreateIngredientOptions{
+			Name:  "modifiedIngr1",
+			Price: ing1.Price + 10.0,
+			Unit:  domain.Kilogram,
+		}
+		ingredientRepository.EditIngredient(ctx, ing1.ID, newIngredientOpts)
 
 		modifiedIngredient, err := ingredientRepository.GetIngredient(ctx, ing1.ID)
 		require.NoError(t, err)
 
-		assert.Equal(t, modifiedIngredient.Name, newName)
-		assert.Equal(t, modifiedIngredient.Price, newPrice)
-		assert.Equal(t, modifiedIngredient.Unit, newUnit)
+		assert.Equal(t, modifiedIngredient.Name, newIngredientOpts.Name)
+		assert.Equal(t, modifiedIngredient.Price, newIngredientOpts.Price)
+		assert.Equal(t, modifiedIngredient.Unit, newIngredientOpts.Unit)
 	})
 }

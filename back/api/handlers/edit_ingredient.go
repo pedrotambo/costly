@@ -22,7 +22,7 @@ func EditIngredientHandler(ingredientRepository repository.IngredientRepository)
 			return
 		}
 
-		_, err = ingredientRepository.EditIngredient(r.Context(), int64(ingredientID), editIngredientOpts.Name, editIngredientOpts.Price, editIngredientOpts.Unit)
+		_, err = ingredientRepository.EditIngredient(r.Context(), int64(ingredientID), editIngredientOpts)
 		if err == repository.ErrNotFound {
 			w.WriteHeader(http.StatusNotFound)
 			return

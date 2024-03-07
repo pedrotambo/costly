@@ -13,7 +13,7 @@ type IngredientRepository interface {
 	GetIngredient(ctx context.Context, id int64) (domain.Ingredient, error)
 	GetIngredients(ctx context.Context) ([]domain.Ingredient, error)
 	CreateIngredient(ctx context.Context, ingredientOpts CreateIngredientOptions) (domain.Ingredient, error)
-	EditIngredient(ctx context.Context, ingredientID int64, name string, price float64, unit domain.Unit) (domain.Ingredient, error)
+	EditIngredient(ctx context.Context, ingredientID int64, ingredientOpts CreateIngredientOptions) (domain.Ingredient, error)
 }
 
 type CreateIngredientOptions struct {
@@ -85,10 +85,10 @@ func (r *ingredientRepository) CreateIngredient(ctx context.Context, ingredientO
 	}, nil
 }
 
-func (r *ingredientRepository) EditIngredient(ctx context.Context, ingredientID int64, name string, price float64, unit domain.Unit) (domain.Ingredient, error) {
+func (r *ingredientRepository) EditIngredient(ctx context.Context, ingredientID int64, ingredientOpts CreateIngredientOptions) (domain.Ingredient, error) {
 	now := r.clock.Now()
 	row := r.db.QueryRowContext(ctx, "UPDATE ingredient SET name = ?, unit = ?, price = ?, last_modified = ? WHERE id = ? RETURNING *",
-		name, unit, price, now, ingredientID)
+		ingredientOpts.Name, ingredientOpts.Unit, ingredientOpts.Price, now, ingredientID)
 
 	var ingredient domain.Ingredient
 	err := row.Scan(&ingredient.ID, &ingredient.Name, &ingredient.Unit, &ingredient.Price, &ingredient.CreatedAt, &ingredient.LastModified)
