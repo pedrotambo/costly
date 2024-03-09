@@ -1,0 +1,52 @@
+package rpst
+
+import (
+	"context"
+	"costly/core/domain"
+	"costly/core/ports/database"
+)
+
+type rowMapper[T any] func(rowScanner database.RowScanner) (T, error)
+
+func queryRowAndMap[T any](ctx context.Context, db database.RowQuerier, rowMapper rowMapper[T], query string, args ...any) (T, error) {
+	row := db.QueryRowContext(ctx, query, args...)
+	return rowMapper(row)
+}
+
+func queryAndMap[T any](ctx context.Context, db database.RowsQuerier, rowMapper rowMapper[T], query string, args ...any) ([]T, error) {
+	rows, err := db.QueryContext(ctx, query, args...)
+	if err != nil {
+		return nil, err
+	}
+	ts := []T{}
+	for rows.Next() {
+		t, err := rowMapper(rows)
+		if err != nil {
+			return nil, err
+		}
+		ts = append(ts, t)
+	}
+	return ts, nil
+}
+
+func mapToIngredient(rowScanner database.RowScanner) (domain.Ingredient, error) {
+	var ingredient domain.Ingredient
+	err := rowScanner.Scan(&ingredient.ID, &ingredient.Name, &ingredient.Unit, &ingredient.Price, &ingredient.CreatedAt, &ingredient.LastModified, &ingredient.UnitsInStock)
+	return ingredient, err
+}
+
+func mapToRecipeIngredient(rowScanner database.RowScanner) (domain.RecipeIngredient, error) {
+	var ingredient domain.Ingredient
+	var recipeUnits int
+	err := rowScanner.Scan(&ingredient.ID, &ingredient.Name, &ingredient.Unit, &ingredient.Price, &ingredient.CreatedAt, &ingredient.LastModified, &ingredient.UnitsInStock, &recipeUnits)
+	return domain.RecipeIngredient{
+		Ingredient: ingredient,
+		Units:      recipeUnits,
+	}, err
+}
+
+func mapToRecipeDB(rowScanner database.RowScanner) (recipeDB, error) {
+	var recipe recipeDB
+	err := rowScanner.Scan(&recipe.id, &recipe.name, &recipe.createdAt, &recipe.lastModified)
+	return recipe, err
+}

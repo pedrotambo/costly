@@ -19,6 +19,7 @@ type Ingredient struct {
 	Name         string    `json:"name"`
 	Unit         Unit      `json:"unit"`
 	Price        float64   `json:"price"`
+	UnitsInStock int       `json:"units_in_stock"`
 	CreatedAt    time.Time `json:"created_at"`
 	LastModified time.Time `json:"last_modified"`
 }

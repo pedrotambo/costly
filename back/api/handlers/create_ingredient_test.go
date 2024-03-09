@@ -6,7 +6,7 @@ import (
 	"costly/core/ports/clock"
 	"costly/core/ports/database"
 	"costly/core/ports/logger"
-	"costly/core/ports/repository"
+	"costly/core/ports/rpst"
 	"fmt"
 	"io"
 	"net/http"
@@ -34,9 +34,9 @@ func (m *clockMock) Now() time.Time {
 }
 
 func runCreateIngredientHandler(t *testing.T, clock clock.Clock, reqBody io.Reader) *httptest.ResponseRecorder {
-	logger, _ := logger.NewLogger("debug")
+	logger, _ := logger.New("debug")
 	db, _ := database.NewFromDatasource(":memory:", logger)
-	repo := repository.NewIngredientRepository(db, clock, logger)
+	repo := rpst.NewIngredientRepository(db, clock, logger)
 	handler := handlers.CreateIngredientHandler(repo)
 
 	req, err := http.NewRequest("POST", "/ingredients", reqBody)
@@ -72,6 +72,7 @@ func TestHandleCreateIngredient(t *testing.T) {
 				"name":"recipeName",
 				"unit":"gr",
 				"price":12.43,
+				"units_in_stock":0,
 				"created_at":"1970-01-01T00:00:12.345Z",
 				"last_modified":"1970-01-01T00:00:12.345Z"
 			}`,

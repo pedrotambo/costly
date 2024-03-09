@@ -2,27 +2,27 @@ package handlers
 
 import (
 	"costly/core/ports/logger"
-	"costly/core/ports/repository"
+	"costly/core/ports/rpst"
 	"net/http"
 )
 
-func parseRecipeOptions(r *http.Request) (repository.CreateRecipeOptions, error) {
-	createRecipeOpts := repository.CreateRecipeOptions{}
+func parseRecipeOptions(r *http.Request) (rpst.CreateRecipeOptions, error) {
+	createRecipeOpts := rpst.CreateRecipeOptions{}
 	if err := UnmarshallJSONBody(r, &createRecipeOpts); err != nil {
-		return repository.CreateRecipeOptions{}, ErrBadJson
+		return rpst.CreateRecipeOptions{}, ErrBadJson
 	}
 	if createRecipeOpts.Name == "" {
-		return repository.CreateRecipeOptions{}, ErrBadName
+		return rpst.CreateRecipeOptions{}, ErrBadName
 	}
 
 	if len(createRecipeOpts.Ingredients) == 0 {
-		return repository.CreateRecipeOptions{}, ErrBadIngrs
+		return rpst.CreateRecipeOptions{}, ErrBadIngrs
 	}
 
 	return createRecipeOpts, nil
 }
 
-func CreateRecipeHandler(recipeRepository repository.RecipeRepository) http.HandlerFunc {
+func CreateRecipeHandler(recipeRepository rpst.RecipeRepository) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		defer r.Body.Close()
 
@@ -33,7 +33,7 @@ func CreateRecipeHandler(recipeRepository repository.RecipeRepository) http.Hand
 		}
 
 		recipe, err := recipeRepository.CreateRecipe(r.Context(), createRecipeOptions)
-		if err == repository.ErrBadOpts {
+		if err == rpst.ErrBadOpts {
 			w.WriteHeader(http.StatusBadRequest)
 			return
 		} else if err != nil {

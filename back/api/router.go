@@ -3,7 +3,7 @@ package api
 import (
 	"costly/api/handlers"
 
-	"costly/core/ports/repository"
+	"costly/core/ports/rpst"
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
@@ -20,7 +20,7 @@ func init() {
 
 type Middleware func(http.Handler) http.Handler
 
-func NewRouter(repository *repository.Repository, authMiddleware Middleware, middlewares ...Middleware) http.Handler {
+func NewRouter(repository rpst.Repository, authMiddleware Middleware, middlewares ...Middleware) http.Handler {
 	r := chi.NewRouter()
 
 	for _, m := range middlewares {
@@ -45,6 +45,7 @@ func NewRouter(repository *repository.Repository, authMiddleware Middleware, mid
 		r.Post("/ingredients", handlers.CreateIngredientHandler(repository))
 		r.Get("/ingredients/{ingredientID}", handlers.GetIngredientHandler(repository))
 		r.Put("/ingredients/{ingredientID}", handlers.EditIngredientHandler(repository))
+		r.Put("/ingredients/stock/{ingredientID}", handlers.UpdateIngredientStockHandler(repository))
 
 		// recipes
 		r.Post("/recipes", handlers.CreateRecipeHandler(repository))

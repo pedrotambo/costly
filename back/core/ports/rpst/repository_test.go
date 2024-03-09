@@ -1,4 +1,4 @@
-package repository_test
+package rpst_test
 
 import (
 	"fmt"

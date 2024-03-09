@@ -8,7 +8,7 @@ import (
 	"costly/core/ports/clock"
 	"costly/core/ports/database"
 	"costly/core/ports/logger"
-	"costly/core/ports/repository"
+	"costly/core/ports/rpst"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -20,10 +20,10 @@ import (
 )
 
 func runEditIngredientHandler(t *testing.T, clock clock.Clock, ingredientIDstr string, reqBody io.Reader) *httptest.ResponseRecorder {
-	logger, _ := logger.NewLogger("debug")
+	logger, _ := logger.New("debug")
 	db, _ := database.NewFromDatasource(":memory:", logger)
-	repo := repository.NewIngredientRepository(db, clock, logger)
-	repo.CreateIngredient(context.Background(), repository.CreateIngredientOptions{
+	repo := rpst.NewIngredientRepository(db, clock, logger)
+	repo.CreateIngredient(context.Background(), rpst.CreateIngredientOptions{
 		Name:  "ingredientName",
 		Price: 12.43,
 		Unit:  domain.Gram,

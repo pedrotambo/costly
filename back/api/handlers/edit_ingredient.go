@@ -2,12 +2,12 @@ package handlers
 
 import (
 	"costly/core/ports/logger"
-	"costly/core/ports/repository"
+	"costly/core/ports/rpst"
 	"net/http"
 	"strconv"
 )
 
-func EditIngredientHandler(ingredientRepository repository.IngredientRepository) http.HandlerFunc {
+func EditIngredientHandler(ingredientRepository rpst.IngredientRepository) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ingredientIDstr := r.PathValue("ingredientID")
 		ingredientID, err := strconv.ParseInt(ingredientIDstr, 10, 64)
@@ -23,7 +23,7 @@ func EditIngredientHandler(ingredientRepository repository.IngredientRepository)
 		}
 
 		_, err = ingredientRepository.EditIngredient(r.Context(), int64(ingredientID), editIngredientOpts)
-		if err == repository.ErrNotFound {
+		if err == rpst.ErrNotFound {
 			w.WriteHeader(http.StatusNotFound)
 			return
 		} else if err != nil {

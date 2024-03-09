@@ -2,32 +2,32 @@ package handlers
 
 import (
 	"costly/core/ports/logger"
-	"costly/core/ports/repository"
+	"costly/core/ports/rpst"
 	"net/http"
 )
 
-func parseIngredientOptions(r *http.Request) (repository.CreateIngredientOptions, error) {
-	createIngredientOpts := repository.CreateIngredientOptions{}
+func parseIngredientOptions(r *http.Request) (rpst.CreateIngredientOptions, error) {
+	createIngredientOpts := rpst.CreateIngredientOptions{}
 	if err := UnmarshallJSONBody(r, &createIngredientOpts); err != nil {
-		return repository.CreateIngredientOptions{}, ErrBadJson
+		return rpst.CreateIngredientOptions{}, ErrBadJson
 	}
 
 	if createIngredientOpts.Name == "" {
-		return repository.CreateIngredientOptions{}, ErrBadName
+		return rpst.CreateIngredientOptions{}, ErrBadName
 	}
 
 	if createIngredientOpts.Unit != "gr" {
-		return repository.CreateIngredientOptions{}, ErrBadUnit
+		return rpst.CreateIngredientOptions{}, ErrBadUnit
 	}
 
 	if createIngredientOpts.Price <= 0 {
-		return repository.CreateIngredientOptions{}, ErrBadPrice
+		return rpst.CreateIngredientOptions{}, ErrBadPrice
 	}
 
 	return createIngredientOpts, nil
 }
 
-func CreateIngredientHandler(ingredientRepository repository.IngredientRepository) http.HandlerFunc {
+func CreateIngredientHandler(ingredientRepository rpst.IngredientRepository) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		defer r.Body.Close()
 

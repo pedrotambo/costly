@@ -24,7 +24,7 @@ type logger struct {
 	internalLogger *zerolog.Logger
 }
 
-func NewLogger(logLevel string) (Logger, error) {
+func New(logLevel string) (Logger, error) {
 	zLevel, err := zerolog.ParseLevel(logLevel)
 	if err != nil {
 		return nil, err

@@ -12,7 +12,7 @@ import (
 	"costly/core/ports/clock"
 	"costly/core/ports/database"
 	"costly/core/ports/logger"
-	"costly/core/ports/repository"
+	"costly/core/ports/rpst"
 
 	_ "github.com/mattn/go-sqlite3"
 )
@@ -61,14 +61,14 @@ func main() {
 
 type AppComponents struct {
 	logger     logger.Logger
-	database   *database.Database
+	database   database.Database
 	server     *http.Server
 	clock      clock.Clock
-	repository *repository.Repository
+	repository rpst.Repository
 }
 
 func initComponents(config *Config) (AppComponents, error) {
-	logger, err := logger.NewLogger(config.LogLevel)
+	logger, err := logger.New(config.LogLevel)
 	if err != nil {
 		fmt.Printf("Could not create logger. Err: %s\n", err)
 		os.Exit(1)
@@ -86,7 +86,7 @@ func initComponents(config *Config) (AppComponents, error) {
 	authMiddleware := api.NewAuthMiddleware([]byte(config.AuthSecret), logger)
 
 	clock := clock.New()
-	repository := repository.New(database, clock, logger)
+	repository := rpst.New(database, clock, logger)
 	router := api.NewRouter(repository, authMiddleware, loggerMiddleware)
 	server := http.Server{
 		Addr:    config.ListenAddress,

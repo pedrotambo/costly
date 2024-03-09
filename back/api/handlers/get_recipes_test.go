@@ -7,7 +7,7 @@ import (
 	"costly/core/ports/clock"
 	"costly/core/ports/database"
 	"costly/core/ports/logger"
-	"costly/core/ports/repository"
+	"costly/core/ports/rpst"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -17,22 +17,22 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func runGetRecipesHandler(t *testing.T, clock clock.Clock, recipeOpts []repository.CreateRecipeOptions) *httptest.ResponseRecorder {
-	logger, _ := logger.NewLogger("debug")
+func runGetRecipesHandler(t *testing.T, clock clock.Clock, recipeOpts []rpst.CreateRecipeOptions) *httptest.ResponseRecorder {
+	logger, _ := logger.New("debug")
 	db, _ := database.NewFromDatasource(":memory:", logger)
-	ingredientRepository := repository.NewIngredientRepository(db, clock, logger)
-	ingredientRepository.CreateIngredient(context.Background(), repository.CreateIngredientOptions{
+	ingredientRepository := rpst.NewIngredientRepository(db, clock, logger)
+	ingredientRepository.CreateIngredient(context.Background(), rpst.CreateIngredientOptions{
 		Name:  "ingr1",
 		Price: 1.50,
 		Unit:  domain.Gram,
 	})
-	ingredientRepository.CreateIngredient(context.Background(), repository.CreateIngredientOptions{
+	ingredientRepository.CreateIngredient(context.Background(), rpst.CreateIngredientOptions{
 		Name:  "ingr2",
 		Price: 2.50,
 		Unit:  domain.Gram,
 	})
 
-	repo := repository.NewRecipeRepository(db, clock, logger)
+	repo := rpst.NewRecipeRepository(db, clock, logger)
 	for _, opts := range recipeOpts {
 		repo.CreateRecipe(context.Background(), opts)
 	}
@@ -58,16 +58,16 @@ func TestHandleGetRecipes(t *testing.T) {
 
 	testCases := []struct {
 		name       string
-		recipes    []repository.CreateRecipeOptions
+		recipes    []rpst.CreateRecipeOptions
 		expected   string
 		statusCode int
 	}{
 		{
 			name: "should get recipes",
-			recipes: []repository.CreateRecipeOptions{
+			recipes: []rpst.CreateRecipeOptions{
 				{
 					Name: "recipe1",
-					Ingredients: []repository.RecipeIngredientOptions{
+					Ingredients: []rpst.RecipeIngredientOptions{
 						{
 							ID:    1,
 							Units: 1,
@@ -80,7 +80,7 @@ func TestHandleGetRecipes(t *testing.T) {
 				},
 				{
 					Name: "recipe2",
-					Ingredients: []repository.RecipeIngredientOptions{
+					Ingredients: []rpst.RecipeIngredientOptions{
 						{
 							ID:    2,
 							Units: 3,
@@ -99,6 +99,7 @@ func TestHandleGetRecipes(t *testing.T) {
 								"name": "ingr1",
 								"unit": "gr",
 								"price": 1.50,
+								"units_in_stock": 0,
 								"created_at": "1970-01-01T00:00:12.345Z",
 								"last_modified": "1970-01-01T00:00:12.345Z"
 							},
@@ -110,6 +111,7 @@ func TestHandleGetRecipes(t *testing.T) {
 								"name": "ingr2",
 								"unit": "gr",
 								"price": 2.50,
+								"units_in_stock": 0,
 								"created_at": "1970-01-01T00:00:12.345Z",
 								"last_modified": "1970-01-01T00:00:12.345Z"
 							},
@@ -130,6 +132,7 @@ func TestHandleGetRecipes(t *testing.T) {
 								"name": "ingr2",
 								"unit": "gr",
 								"price": 2.50,
+								"units_in_stock": 0,
 								"created_at": "1970-01-01T00:00:12.345Z",
 								"last_modified": "1970-01-01T00:00:12.345Z"
 							},
@@ -145,7 +148,7 @@ func TestHandleGetRecipes(t *testing.T) {
 		},
 		{
 			name:       "should get empty ingredients",
-			recipes:    []repository.CreateRecipeOptions{},
+			recipes:    []rpst.CreateRecipeOptions{},
 			expected:   `[]`,
 			statusCode: http.StatusOK,
 		},

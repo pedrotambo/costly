@@ -8,7 +8,7 @@ import (
 	"costly/core/ports/clock"
 	"costly/core/ports/database"
 	"costly/core/ports/logger"
-	"costly/core/ports/repository"
+	"costly/core/ports/rpst"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -20,21 +20,21 @@ import (
 )
 
 func runCreateRecipeHandler(t *testing.T, clock clock.Clock, reqBody io.Reader) *httptest.ResponseRecorder {
-	logger, _ := logger.NewLogger("debug")
+	logger, _ := logger.New("debug")
 	db, _ := database.NewFromDatasource(":memory:", logger)
-	ingredientRepository := repository.NewIngredientRepository(db, clock, logger)
-	ingredientRepository.CreateIngredient(context.Background(), repository.CreateIngredientOptions{
+	ingredientRepository := rpst.NewIngredientRepository(db, clock, logger)
+	ingredientRepository.CreateIngredient(context.Background(), rpst.CreateIngredientOptions{
 		Name:  "ingr1",
 		Price: 1.50,
 		Unit:  domain.Gram,
 	})
-	ingredientRepository.CreateIngredient(context.Background(), repository.CreateIngredientOptions{
+	ingredientRepository.CreateIngredient(context.Background(), rpst.CreateIngredientOptions{
 		Name:  "ingr2",
 		Price: 2.50,
 		Unit:  domain.Gram,
 	})
 
-	repo := repository.NewRecipeRepository(db, clock, logger)
+	repo := rpst.NewRecipeRepository(db, clock, logger)
 	handler := handlers.CreateRecipeHandler(repo)
 
 	req, err := http.NewRequest("POST", "/recipes", reqBody)
@@ -85,6 +85,7 @@ func TestHandleCreateRecipe(t *testing.T) {
 							"name": "ingr1",
 							"unit": "gr",
 							"price": 1.50,
+							"units_in_stock":0,
 							"created_at": "1970-01-01T00:00:12.345Z",
 							"last_modified": "1970-01-01T00:00:12.345Z"
 						},
@@ -96,6 +97,7 @@ func TestHandleCreateRecipe(t *testing.T) {
 							"name": "ingr2",
 							"unit": "gr",
 							"price": 2.50,
+							"units_in_stock":0,
 							"created_at": "1970-01-01T00:00:12.345Z",
 							"last_modified": "1970-01-01T00:00:12.345Z"
 						},
