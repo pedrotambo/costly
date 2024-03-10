@@ -8,6 +8,7 @@ import (
 	"costly/core/ports/database"
 	"costly/core/ports/logger"
 	"costly/core/ports/rpst"
+	"costly/core/usecases"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -17,24 +18,24 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func runGetRecipesHandler(t *testing.T, clock clock.Clock, recipeOpts []rpst.CreateRecipeOptions) *httptest.ResponseRecorder {
+func runGetRecipesHandler(t *testing.T, clock clock.Clock, recipeOpts []usecases.CreateRecipeOptions) *httptest.ResponseRecorder {
 	logger, _ := logger.New("debug")
 	db, _ := database.NewFromDatasource(":memory:", logger)
-	ingredientRepository := rpst.NewIngredientRepository(db, clock, logger)
-	ingredientRepository.CreateIngredient(context.Background(), rpst.CreateIngredientOptions{
+	repo := rpst.New(db, clock, logger)
+	allUsecases := usecases.New(repo, clock)
+	allUsecases.CreateIngredient(context.Background(), usecases.CreateIngredientOptions{
 		Name:  "ingr1",
 		Price: 1.50,
 		Unit:  domain.Gram,
 	})
-	ingredientRepository.CreateIngredient(context.Background(), rpst.CreateIngredientOptions{
+	allUsecases.CreateIngredient(context.Background(), usecases.CreateIngredientOptions{
 		Name:  "ingr2",
 		Price: 2.50,
 		Unit:  domain.Gram,
 	})
 
-	repo := rpst.NewRecipeRepository(db, clock, logger)
 	for _, opts := range recipeOpts {
-		repo.CreateRecipe(context.Background(), opts)
+		allUsecases.CreateRecipe(context.Background(), opts)
 	}
 
 	handler := handlers.GetRecipesHandler(repo)
@@ -58,16 +59,16 @@ func TestHandleGetRecipes(t *testing.T) {
 
 	testCases := []struct {
 		name       string
-		recipes    []rpst.CreateRecipeOptions
+		recipes    []usecases.CreateRecipeOptions
 		expected   string
 		statusCode int
 	}{
 		{
 			name: "should get recipes",
-			recipes: []rpst.CreateRecipeOptions{
+			recipes: []usecases.CreateRecipeOptions{
 				{
 					Name: "recipe1",
-					Ingredients: []rpst.RecipeIngredientOptions{
+					Ingredients: []usecases.RecipeIngredientOptions{
 						{
 							ID:    1,
 							Units: 1,
@@ -80,7 +81,7 @@ func TestHandleGetRecipes(t *testing.T) {
 				},
 				{
 					Name: "recipe2",
-					Ingredients: []rpst.RecipeIngredientOptions{
+					Ingredients: []usecases.RecipeIngredientOptions{
 						{
 							ID:    2,
 							Units: 3,
@@ -148,7 +149,7 @@ func TestHandleGetRecipes(t *testing.T) {
 		},
 		{
 			name:       "should get empty ingredients",
-			recipes:    []rpst.CreateRecipeOptions{},
+			recipes:    []usecases.CreateRecipeOptions{},
 			expected:   `[]`,
 			statusCode: http.StatusOK,
 		},

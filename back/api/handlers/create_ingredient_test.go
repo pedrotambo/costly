@@ -7,6 +7,7 @@ import (
 	"costly/core/ports/database"
 	"costly/core/ports/logger"
 	"costly/core/ports/rpst"
+	"costly/core/usecases"
 	"fmt"
 	"io"
 	"net/http"
@@ -37,7 +38,8 @@ func runCreateIngredientHandler(t *testing.T, clock clock.Clock, reqBody io.Read
 	logger, _ := logger.New("debug")
 	db, _ := database.NewFromDatasource(":memory:", logger)
 	repo := rpst.NewIngredientRepository(db, clock, logger)
-	handler := handlers.CreateIngredientHandler(repo)
+	ingredientUsecases := usecases.NewIngredientUseCases(repo, clock)
+	handler := handlers.CreateIngredientHandler(ingredientUsecases)
 
 	req, err := http.NewRequest("POST", "/ingredients", reqBody)
 	if err != nil {

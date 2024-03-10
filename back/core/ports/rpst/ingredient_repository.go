@@ -10,18 +10,12 @@ import (
 )
 
 type IngredientRepository interface {
+	SaveIngredient(ctx context.Context, ingredient *domain.Ingredient) error
+	UpdateIngredient(ctx context.Context, ingredient *domain.Ingredient) error
 	GetIngredient(ctx context.Context, id int64) (domain.Ingredient, error)
 	GetIngredients(ctx context.Context) ([]domain.Ingredient, error)
-	CreateIngredient(ctx context.Context, ingredientOpts CreateIngredientOptions) (domain.Ingredient, error)
-	EditIngredient(ctx context.Context, ingredientID int64, ingredientOpts CreateIngredientOptions) (domain.Ingredient, error)
-	UpdateStock(ctx context.Context, ingredientID int64, newStockOptions NewStockOptions) (domain.Ingredient, error)
-	// ReduceStockUnits(ctx context.Context, unitsUsedByID map[int64]int) error
-}
 
-type CreateIngredientOptions struct {
-	Name  string
-	Price float64
-	Unit  domain.Unit
+	UpdateStock(ctx context.Context, ingredientID int64, newStockOptions NewStockOptions) (domain.Ingredient, error)
 }
 
 type NewStockOptions struct {
@@ -57,39 +51,33 @@ func (r *ingredientRepository) GetIngredients(ctx context.Context) ([]domain.Ing
 	return ingredients, nil
 }
 
-func (r *ingredientRepository) CreateIngredient(ctx context.Context, ingredientOpts CreateIngredientOptions) (domain.Ingredient, error) {
-	now := r.clock.Now()
-	var ingredientID int64 = -1
-	result, err := r.db.ExecContext(ctx, "INSERT INTO ingredient (name, unit, price, units_in_stock, created_at, last_modified) VALUES (?, ?, ?, ?, ?, ?)", ingredientOpts.Name, ingredientOpts.Unit, ingredientOpts.Price, 0, now, now)
+func (r *ingredientRepository) SaveIngredient(ctx context.Context, ingredient *domain.Ingredient) error {
+	result, err := r.db.ExecContext(ctx, "INSERT INTO ingredient (name, unit, price, units_in_stock, created_at, last_modified) VALUES (?, ?, ?, ?, ?, ?)",
+		ingredient.Name, ingredient.Unit, ingredient.Price, ingredient.UnitsInStock, ingredient.CreatedAt, ingredient.LastModified)
+
 	if err != nil {
-		return domain.Ingredient{}, err
+		return err
 	}
-	ingredientID, err = result.LastInsertId()
+
+	ingredientID, err := result.LastInsertId()
+
 	if err != nil {
-		return domain.Ingredient{}, err
+		return err
 	}
-	return domain.Ingredient{
-		ID:           ingredientID,
-		Name:         ingredientOpts.Name,
-		Price:        ingredientOpts.Price,
-		Unit:         ingredientOpts.Unit,
-		UnitsInStock: 0,
-		CreatedAt:    now,
-		LastModified: now,
-	}, nil
+	ingredient.ID = ingredientID
+	return nil
 }
 
-func (r *ingredientRepository) EditIngredient(ctx context.Context, ingredientID int64, ingredientOpts CreateIngredientOptions) (domain.Ingredient, error) {
-	now := r.clock.Now()
-	ingredient, err := queryRowAndMap(ctx, r.db, mapToIngredient, "UPDATE ingredient SET name = ?, unit = ?, price = ?, last_modified = ? WHERE id = ? RETURNING *", ingredientOpts.Name, ingredientOpts.Unit, ingredientOpts.Price, now, ingredientID)
+func (r *ingredientRepository) UpdateIngredient(ctx context.Context, ingredient *domain.Ingredient) error {
+	_, err := queryRowAndMap(ctx, r.db, mapToIngredient, "UPDATE ingredient SET name = ?, unit = ?, price = ?, last_modified = ? WHERE id = ? RETURNING *", ingredient.Name, ingredient.Unit, ingredient.Price, ingredient.LastModified, ingredient.ID)
 	if err == sql.ErrNoRows {
 		r.logger.Error(ErrNotFound, "error updating unexistent ingredient")
-		return domain.Ingredient{}, ErrNotFound
+		return ErrNotFound
 	} else if err != nil {
 		r.logger.Error(err, "error updating ingredient")
-		return domain.Ingredient{}, err
+		return err
 	}
-	return ingredient, nil
+	return nil
 }
 
 func (r *ingredientRepository) UpdateStock(ctx context.Context, ingredientID int64, newStockOptions NewStockOptions) (domain.Ingredient, error) {
@@ -115,30 +103,3 @@ func (r *ingredientRepository) UpdateStock(ctx context.Context, ingredientID int
 	}
 	return ingredient, nil
 }
-
-// func (r *ingredientRepository) ReduceStockUnits(ctx context.Context, unitsUsedByID map[int64]int) error {
-// 	now := r.clock.Now()
-// 	var ingredient domain.Ingredient
-// 	if err := r.db.WithTx(ctx, func(tx database.TX) error {
-// 		for id, usedUnits := range unitsUsedByID {
-
-// 		}
-// 		updatedIngredient, err := queryRowAndMap(ctx, tx, mapToIngredient, "UPDATE ingredient SET units_in_stock = units_in_stock + ?, price = ?, last_modified = ? WHERE id = ? RETURNING *", newStockOptions.NewUnits, newStockOptions.Price, now, ingredientID)
-// 		if err == sql.ErrNoRows {
-// 			r.logger.Error(ErrNotFound, "error updating unexistent ingredient")
-// 			return ErrNotFound
-// 		} else if err != nil {
-// 			r.logger.Error(err, "error updating ingredient")
-// 			return err
-// 		}
-// 		ingredient = updatedIngredient
-// 		_, err = tx.ExecContext(ctx, "INSERT INTO stock_history (ingredient_id, units, price, created_at) VALUES (?, ?, ?, ?)", ingredientID, newStockOptions.NewUnits, newStockOptions.Price, now)
-// 		if err != nil {
-// 			return err
-// 		}
-// 		return nil
-// 	}); err != nil {
-// 		return domain.Ingredient{}, err
-// 	}
-// 	return ingredient, nil
-// }

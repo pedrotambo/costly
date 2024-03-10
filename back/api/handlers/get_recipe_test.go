@@ -8,6 +8,7 @@ import (
 	"costly/core/ports/database"
 	"costly/core/ports/logger"
 	"costly/core/ports/rpst"
+	"costly/core/usecases"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -20,9 +21,9 @@ import (
 func runGetRecipeHandler(t *testing.T, clock clock.Clock, recipeIDstr string) *httptest.ResponseRecorder {
 	logger, _ := logger.New("debug")
 	db, _ := database.NewFromDatasource(":memory:", logger)
-	ingredientRepository := rpst.NewIngredientRepository(db, clock, logger)
-
-	_, err := ingredientRepository.CreateIngredient(context.Background(), rpst.CreateIngredientOptions{
+	repo := rpst.New(db, clock, logger)
+	allUsecases := usecases.New(repo, clock)
+	_, err := allUsecases.CreateIngredient(context.Background(), usecases.CreateIngredientOptions{
 		Name:  "ingr1",
 		Price: 1.50,
 		Unit:  domain.Gram,
@@ -32,7 +33,7 @@ func runGetRecipeHandler(t *testing.T, clock clock.Clock, recipeIDstr string) *h
 		t.Fatal()
 	}
 
-	_, err = ingredientRepository.CreateIngredient(context.Background(), rpst.CreateIngredientOptions{
+	_, err = allUsecases.CreateIngredient(context.Background(), usecases.CreateIngredientOptions{
 		Name:  "ingr2",
 		Price: 2.50,
 		Unit:  domain.Gram,
@@ -42,10 +43,9 @@ func runGetRecipeHandler(t *testing.T, clock clock.Clock, recipeIDstr string) *h
 		t.Fatal()
 	}
 
-	repo := rpst.NewRecipeRepository(db, clock, logger)
-	repo.CreateRecipe(context.Background(), rpst.CreateRecipeOptions{
+	allUsecases.CreateRecipe(context.Background(), usecases.CreateRecipeOptions{
 		Name: "recipe1",
-		Ingredients: []rpst.RecipeIngredientOptions{
+		Ingredients: []usecases.RecipeIngredientOptions{
 			{
 				ID:    1,
 				Units: 1,

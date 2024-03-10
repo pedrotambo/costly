@@ -3,26 +3,27 @@ package handlers
 import (
 	"costly/core/ports/logger"
 	"costly/core/ports/rpst"
+	"costly/core/usecases"
 	"net/http"
 )
 
-func parseRecipeOptions(r *http.Request) (rpst.CreateRecipeOptions, error) {
-	createRecipeOpts := rpst.CreateRecipeOptions{}
+func parseRecipeOptions(r *http.Request) (usecases.CreateRecipeOptions, error) {
+	createRecipeOpts := usecases.CreateRecipeOptions{}
 	if err := UnmarshallJSONBody(r, &createRecipeOpts); err != nil {
-		return rpst.CreateRecipeOptions{}, ErrBadJson
+		return usecases.CreateRecipeOptions{}, ErrBadJson
 	}
 	if createRecipeOpts.Name == "" {
-		return rpst.CreateRecipeOptions{}, ErrBadName
+		return usecases.CreateRecipeOptions{}, ErrBadName
 	}
 
 	if len(createRecipeOpts.Ingredients) == 0 {
-		return rpst.CreateRecipeOptions{}, ErrBadIngrs
+		return usecases.CreateRecipeOptions{}, ErrBadIngrs
 	}
 
 	return createRecipeOpts, nil
 }
 
-func CreateRecipeHandler(recipeRepository rpst.RecipeRepository) http.HandlerFunc {
+func CreateRecipeHandler(recipeCreator usecases.RecipeCreator) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		defer r.Body.Close()
 
@@ -32,7 +33,7 @@ func CreateRecipeHandler(recipeRepository rpst.RecipeRepository) http.HandlerFun
 			return
 		}
 
-		recipe, err := recipeRepository.CreateRecipe(r.Context(), createRecipeOptions)
+		recipe, err := recipeCreator.CreateRecipe(r.Context(), createRecipeOptions)
 		if err == rpst.ErrBadOpts {
 			w.WriteHeader(http.StatusBadRequest)
 			return
@@ -43,7 +44,7 @@ func CreateRecipeHandler(recipeRepository rpst.RecipeRepository) http.HandlerFun
 		}
 
 		RespondJSON(w, 201, RecipeResponse{
-			Recipe: recipe,
+			Recipe: *recipe,
 			Cost:   recipe.Cost(),
 		})
 	}

@@ -8,6 +8,7 @@ import (
 	"costly/core/ports/database"
 	"costly/core/ports/logger"
 	"costly/core/ports/rpst"
+	"costly/core/usecases"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -17,12 +18,13 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func runGetIngredientsHandler(t *testing.T, clock clock.Clock, ingrOpts []rpst.CreateIngredientOptions) *httptest.ResponseRecorder {
+func runGetIngredientsHandler(t *testing.T, clock clock.Clock, ingrOpts []usecases.CreateIngredientOptions) *httptest.ResponseRecorder {
 	logger, _ := logger.New("debug")
 	db, _ := database.NewFromDatasource(":memory:", logger)
 	repo := rpst.NewIngredientRepository(db, clock, logger)
+	ingredientUsecases := usecases.NewIngredientUseCases(repo, clock)
 	for _, opts := range ingrOpts {
-		repo.CreateIngredient(context.Background(), opts)
+		ingredientUsecases.CreateIngredient(context.Background(), opts)
 	}
 
 	handler := handlers.GetIngredientsHandler(repo)
@@ -46,13 +48,13 @@ func TestHandleGetIngredients(t *testing.T) {
 
 	testCases := []struct {
 		name        string
-		ingredients []rpst.CreateIngredientOptions
+		ingredients []usecases.CreateIngredientOptions
 		expected    string
 		statusCode  int
 	}{
 		{
 			name: "should get ingredients",
-			ingredients: []rpst.CreateIngredientOptions{
+			ingredients: []usecases.CreateIngredientOptions{
 				{
 					Name:  "ingr1",
 					Price: 1.5,
@@ -88,7 +90,7 @@ func TestHandleGetIngredients(t *testing.T) {
 		},
 		{
 			name:        "should get empty ingredients",
-			ingredients: []rpst.CreateIngredientOptions{},
+			ingredients: []usecases.CreateIngredientOptions{},
 			expected:    `[]`,
 			statusCode:  http.StatusOK,
 		},

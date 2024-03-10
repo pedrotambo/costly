@@ -13,6 +13,7 @@ import (
 	"costly/core/ports/database"
 	"costly/core/ports/logger"
 	"costly/core/ports/rpst"
+	"costly/core/usecases"
 
 	_ "github.com/mattn/go-sqlite3"
 )
@@ -87,7 +88,8 @@ func initComponents(config *Config) (AppComponents, error) {
 
 	clock := clock.New()
 	repository := rpst.New(database, clock, logger)
-	router := api.NewRouter(repository, authMiddleware, loggerMiddleware)
+	useCases := usecases.New(repository, clock)
+	router := api.NewRouter(repository, useCases, authMiddleware, loggerMiddleware)
 	server := http.Server{
 		Addr:    config.ListenAddress,
 		Handler: router,

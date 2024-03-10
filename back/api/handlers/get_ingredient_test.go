@@ -8,6 +8,7 @@ import (
 	"costly/core/ports/database"
 	"costly/core/ports/logger"
 	"costly/core/ports/rpst"
+	"costly/core/usecases"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -21,7 +22,8 @@ func runGetIngredientHandler(t *testing.T, clock clock.Clock, ingredientIDstr st
 	logger, _ := logger.New("debug")
 	db, _ := database.NewFromDatasource(":memory:", logger)
 	repo := rpst.NewIngredientRepository(db, clock, logger)
-	repo.CreateIngredient(context.Background(), rpst.CreateIngredientOptions{
+	ingredientUsecases := usecases.NewIngredientUseCases(repo, clock)
+	ingredientUsecases.CreateIngredient(context.Background(), usecases.CreateIngredientOptions{
 		Name:  "ingredientName",
 		Price: 12.43,
 		Unit:  domain.Gram,

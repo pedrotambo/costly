@@ -9,6 +9,7 @@ import (
 	"costly/core/ports/database"
 	"costly/core/ports/logger"
 	"costly/core/ports/rpst"
+	"costly/core/usecases"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -22,20 +23,20 @@ import (
 func runCreateRecipeHandler(t *testing.T, clock clock.Clock, reqBody io.Reader) *httptest.ResponseRecorder {
 	logger, _ := logger.New("debug")
 	db, _ := database.NewFromDatasource(":memory:", logger)
-	ingredientRepository := rpst.NewIngredientRepository(db, clock, logger)
-	ingredientRepository.CreateIngredient(context.Background(), rpst.CreateIngredientOptions{
+	repo := rpst.New(db, clock, logger)
+	allUsecases := usecases.New(repo, clock)
+	allUsecases.CreateIngredient(context.Background(), usecases.CreateIngredientOptions{
 		Name:  "ingr1",
 		Price: 1.50,
 		Unit:  domain.Gram,
 	})
-	ingredientRepository.CreateIngredient(context.Background(), rpst.CreateIngredientOptions{
+	allUsecases.CreateIngredient(context.Background(), usecases.CreateIngredientOptions{
 		Name:  "ingr2",
 		Price: 2.50,
 		Unit:  domain.Gram,
 	})
 
-	repo := rpst.NewRecipeRepository(db, clock, logger)
-	handler := handlers.CreateRecipeHandler(repo)
+	handler := handlers.CreateRecipeHandler(allUsecases)
 
 	req, err := http.NewRequest("POST", "/recipes", reqBody)
 	if err != nil {
