@@ -2,7 +2,7 @@ package usecases_test
 
 import (
 	"context"
-	"costly/core/domain"
+	"costly/core/model"
 	"costly/core/ports/clock"
 	"costly/core/ports/database"
 	"costly/core/ports/logger"
@@ -31,7 +31,7 @@ func TestCreateIngredient(t *testing.T) {
 		ingredient, err := ingredientUsecases.CreateIngredient(context.Background(), usecases.CreateIngredientOptions{
 			Name:  "name",
 			Price: 10.0,
-			Unit:  domain.Gram,
+			Unit:  model.Gram,
 		})
 
 		if err != nil {
@@ -41,7 +41,7 @@ func TestCreateIngredient(t *testing.T) {
 		assert.Equal(t, ingredient.ID, int64(1))
 		assert.Equal(t, ingredient.Name, "name")
 		assert.Equal(t, ingredient.Price, 10.0)
-		assert.Equal(t, ingredient.Unit, domain.Gram)
+		assert.Equal(t, ingredient.Unit, model.Gram)
 		assert.Equal(t, ingredient.CreatedAt, now)
 		assert.Equal(t, ingredient.LastModified, now)
 	})
@@ -55,13 +55,13 @@ func TestCreateIngredient(t *testing.T) {
 		ingredientUsecases.CreateIngredient(context.Background(), usecases.CreateIngredientOptions{
 			Name:  existentIngredientName,
 			Price: 10.0,
-			Unit:  domain.Gram,
+			Unit:  model.Gram,
 		})
 
 		_, err := ingredientUsecases.CreateIngredient(context.Background(), usecases.CreateIngredientOptions{
 			Name:  existentIngredientName,
 			Price: 1123450.0,
-			Unit:  domain.Kilogram,
+			Unit:  model.Kilogram,
 		})
 		require.Error(t, err)
 	})
@@ -75,13 +75,13 @@ func TestCreateIngredient(t *testing.T) {
 		ing1, err := ingredientUsecases.CreateIngredient(ctx, usecases.CreateIngredientOptions{
 			Name:  "ing1",
 			Price: 10.0,
-			Unit:  domain.Gram,
+			Unit:  model.Gram,
 		})
 		require.NoError(t, err)
 		ing2, err := ingredientUsecases.CreateIngredient(ctx, usecases.CreateIngredientOptions{
 			Name:  "ing2",
 			Price: 1231231231.0,
-			Unit:  domain.Gram,
+			Unit:  model.Gram,
 		})
 		require.NoError(t, err)
 
@@ -102,14 +102,14 @@ func TestEditIngredient(t *testing.T) {
 		ing1, err := ingredientUsecases.CreateIngredient(ctx, usecases.CreateIngredientOptions{
 			Name:  "ing1",
 			Price: 10.0,
-			Unit:  domain.Gram,
+			Unit:  model.Gram,
 		})
 		require.NoError(t, err)
 
 		newIngredientOpts := usecases.CreateIngredientOptions{
 			Name:  "modifiedIngr1",
 			Price: ing1.Price + 10.0,
-			Unit:  domain.Kilogram,
+			Unit:  model.Kilogram,
 		}
 		_, err = ingredientUsecases.EditIngredient(ctx, ing1.ID, newIngredientOpts)
 		require.NoError(t, err)

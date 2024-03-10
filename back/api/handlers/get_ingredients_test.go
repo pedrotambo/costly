@@ -3,7 +3,7 @@ package handlers_test
 import (
 	"context"
 	"costly/api/handlers"
-	"costly/core/domain"
+	"costly/core/model"
 	"costly/core/ports/clock"
 	"costly/core/ports/database"
 	"costly/core/ports/logger"
@@ -58,12 +58,12 @@ func TestHandleGetIngredients(t *testing.T) {
 				{
 					Name:  "ingr1",
 					Price: 1.5,
-					Unit:  domain.Gram,
+					Unit:  model.Gram,
 				},
 				{
 					Name:  "ingr2",
 					Price: 2.5,
-					Unit:  domain.Gram,
+					Unit:  model.Gram,
 				},
 			},
 			expected: `[

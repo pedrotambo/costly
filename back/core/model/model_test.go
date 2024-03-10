@@ -1,7 +1,7 @@
-package domain_test
+package model_test
 
 import (
-	"costly/core/domain"
+	"costly/core/model"
 	"costly/core/ports/clock"
 	"testing"
 
@@ -13,15 +13,15 @@ func TestRecipeCost(t *testing.T) {
 	t.Run("cost of a recipe is the sum of its ingredients and units of them", func(t *testing.T) {
 		clock := clock.New()
 		now := clock.Now()
-		recipe := domain.Recipe{
+		recipe := model.Recipe{
 			ID:   1,
 			Name: "aName",
-			Ingredients: []domain.RecipeIngredient{
+			Ingredients: []model.RecipeIngredient{
 				{
-					Ingredient: domain.Ingredient{
+					Ingredient: model.Ingredient{
 						1,
 						"meat",
-						domain.Gram,
+						model.Gram,
 						1.0,
 						0,
 						now,
@@ -30,10 +30,10 @@ func TestRecipeCost(t *testing.T) {
 					Units: 500,
 				},
 				{
-					Ingredient: domain.Ingredient{
+					Ingredient: model.Ingredient{
 						1,
 						"salt",
-						domain.Gram,
+						model.Gram,
 						10.0,
 						0,
 						now,

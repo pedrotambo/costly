@@ -3,7 +3,6 @@ package api
 import (
 	"costly/api/handlers"
 
-	"costly/core/ports/rpst"
 	"costly/core/usecases"
 	"net/http"
 
@@ -21,7 +20,7 @@ func init() {
 
 type Middleware func(http.Handler) http.Handler
 
-func NewRouter(repository rpst.Repository, useCases usecases.UseCases, authMiddleware Middleware, middlewares ...Middleware) http.Handler {
+func NewRouter(useCases usecases.UseCases, authMiddleware Middleware, middlewares ...Middleware) http.Handler {
 	r := chi.NewRouter()
 
 	for _, m := range middlewares {
@@ -42,16 +41,16 @@ func NewRouter(repository rpst.Repository, useCases usecases.UseCases, authMiddl
 	r.Group(func(r chi.Router) {
 		r.Use(authMiddleware)
 		// ingredients
-		r.Get("/ingredients", handlers.GetIngredientsHandler(repository))
+		r.Get("/ingredients", handlers.GetIngredientsHandler(useCases))
 		r.Post("/ingredients", handlers.CreateIngredientHandler(useCases))
-		r.Get("/ingredients/{ingredientID}", handlers.GetIngredientHandler(repository))
+		r.Get("/ingredients/{ingredientID}", handlers.GetIngredientHandler(useCases))
 		r.Put("/ingredients/{ingredientID}", handlers.EditIngredientHandler(useCases))
-		r.Put("/ingredients/stock/{ingredientID}", handlers.UpdateIngredientStockHandler(repository))
+		r.Put("/ingredients/stock/{ingredientID}", handlers.UpdateIngredientStockHandler(useCases))
 
 		// recipes
 		r.Post("/recipes", handlers.CreateRecipeHandler(useCases))
-		r.Get("/recipes", handlers.GetRecipesHandler(repository))
-		r.Get("/recipes/{recipeID}", handlers.GetRecipeHandler(repository))
+		r.Get("/recipes", handlers.GetRecipesHandler(useCases))
+		r.Get("/recipes/{recipeID}", handlers.GetRecipeHandler(useCases))
 	})
 
 	return r

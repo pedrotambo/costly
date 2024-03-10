@@ -2,7 +2,7 @@ package rpst_test
 
 import (
 	"context"
-	"costly/core/domain"
+	"costly/core/model"
 	"costly/core/ports/clock"
 	"costly/core/ports/database"
 	"costly/core/ports/logger"
@@ -31,13 +31,13 @@ func TestGetIngredient(t *testing.T) {
 		ing1, err := ingredientUsecases.CreateIngredient(context.Background(), usecases.CreateIngredientOptions{
 			Name:  "ing1",
 			Price: 10.0,
-			Unit:  domain.Gram,
+			Unit:  model.Gram,
 		})
 		require.NoError(t, err)
 		_, err = ingredientUsecases.CreateIngredient(context.Background(), usecases.CreateIngredientOptions{
 			Name:  "ing2",
 			Price: 1123123123120.0,
-			Unit:  domain.Gram,
+			Unit:  model.Gram,
 		})
 		require.NoError(t, err)
 
@@ -72,13 +72,13 @@ func TestGetIngredients(t *testing.T) {
 		ing1, err := ingredientUsecases.CreateIngredient(context.Background(), usecases.CreateIngredientOptions{
 			Name:  "ing1",
 			Price: 10.0,
-			Unit:  domain.Gram,
+			Unit:  model.Gram,
 		})
 		require.NoError(t, err)
 		ing2, err := ingredientUsecases.CreateIngredient(context.Background(), usecases.CreateIngredientOptions{
 			Name:  "ing2",
 			Price: 1123123123120.0,
-			Unit:  domain.Gram,
+			Unit:  model.Gram,
 		})
 		require.NoError(t, err)
 
@@ -103,7 +103,7 @@ func TestUpdateStock(t *testing.T) {
 		ing1, err := ingredientUsecases.CreateIngredient(ctx, usecases.CreateIngredientOptions{
 			Name:  "ing1",
 			Price: 10.0,
-			Unit:  domain.Gram,
+			Unit:  model.Gram,
 		})
 		require.NoError(t, err)
 
@@ -125,7 +125,7 @@ func TestUpdateStock(t *testing.T) {
 		ing1, err := ingredientUsecases.CreateIngredient(ctx, usecases.CreateIngredientOptions{
 			Name:  "ing1",
 			Price: 10.0,
-			Unit:  domain.Gram,
+			Unit:  model.Gram,
 		})
 		require.NoError(t, err)
 
@@ -147,7 +147,7 @@ func TestUpdateStock(t *testing.T) {
 		ing1, err := ingredientUsecases.CreateIngredient(ctx, usecases.CreateIngredientOptions{
 			Name:  "ing1",
 			Price: 10.0,
-			Unit:  domain.Gram,
+			Unit:  model.Gram,
 		})
 		require.NoError(t, err)
 

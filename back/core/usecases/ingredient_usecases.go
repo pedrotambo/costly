@@ -2,7 +2,7 @@ package usecases
 
 import (
 	"context"
-	"costly/core/domain"
+	"costly/core/model"
 	"costly/core/ports/clock"
 	"costly/core/ports/rpst"
 )
@@ -10,7 +10,7 @@ import (
 type CreateIngredientOptions struct {
 	Name  string
 	Price float64
-	Unit  domain.Unit
+	Unit  model.Unit
 }
 
 type IngredientUseCases interface {
@@ -19,11 +19,11 @@ type IngredientUseCases interface {
 }
 
 type IngredientCreator interface {
-	CreateIngredient(ctx context.Context, ingredientOpts CreateIngredientOptions) (*domain.Ingredient, error)
+	CreateIngredient(ctx context.Context, ingredientOpts CreateIngredientOptions) (*model.Ingredient, error)
 }
 
 type IngredientEditor interface {
-	EditIngredient(ctx context.Context, ingredientID int64, ingredientOpts CreateIngredientOptions) (*domain.Ingredient, error)
+	EditIngredient(ctx context.Context, ingredientID int64, ingredientOpts CreateIngredientOptions) (*model.Ingredient, error)
 }
 
 type ingredientUseCases struct {
@@ -38,9 +38,9 @@ func NewIngredientUseCases(repository rpst.IngredientRepository, clock clock.Clo
 	}
 }
 
-func (ic *ingredientUseCases) CreateIngredient(ctx context.Context, ingredientOpts CreateIngredientOptions) (*domain.Ingredient, error) {
+func (ic *ingredientUseCases) CreateIngredient(ctx context.Context, ingredientOpts CreateIngredientOptions) (*model.Ingredient, error) {
 	now := ic.clock.Now()
-	newIngredient := &domain.Ingredient{
+	newIngredient := &model.Ingredient{
 		ID:           -1,
 		Name:         ingredientOpts.Name,
 		Unit:         ingredientOpts.Unit,
@@ -59,7 +59,7 @@ func (ic *ingredientUseCases) CreateIngredient(ctx context.Context, ingredientOp
 	return newIngredient, nil
 }
 
-func (ic *ingredientUseCases) EditIngredient(ctx context.Context, ingredientID int64, ingredientOpts CreateIngredientOptions) (*domain.Ingredient, error) {
+func (ic *ingredientUseCases) EditIngredient(ctx context.Context, ingredientID int64, ingredientOpts CreateIngredientOptions) (*model.Ingredient, error) {
 	ingredient, err := ic.repository.GetIngredient(ctx, ingredientID)
 	if err != nil {
 		return &ingredient, err

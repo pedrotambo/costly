@@ -1,4 +1,4 @@
-package domain
+package model
 
 import (
 	"time"
@@ -22,6 +22,14 @@ type Ingredient struct {
 	UnitsInStock int       `json:"units_in_stock"`
 	CreatedAt    time.Time `json:"created_at"`
 	LastModified time.Time `json:"last_modified"`
+}
+
+type IngredientStock struct {
+	ID           int64
+	IngredientID int64
+	Units        int
+	Price        float64
+	CreatedAt    time.Time
 }
 
 type RecipeIngredient struct {

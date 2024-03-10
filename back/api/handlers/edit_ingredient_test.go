@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"context"
 	"costly/api/handlers"
-	"costly/core/domain"
+	"costly/core/model"
 	"costly/core/ports/clock"
 	"costly/core/ports/database"
 	"costly/core/ports/logger"
@@ -28,7 +28,7 @@ func runEditIngredientHandler(t *testing.T, clock clock.Clock, ingredientIDstr s
 	ingredientUsecases.CreateIngredient(context.Background(), usecases.CreateIngredientOptions{
 		Name:  "ingredientName",
 		Price: 12.43,
-		Unit:  domain.Gram,
+		Unit:  model.Gram,
 	})
 
 	handler := handlers.EditIngredientHandler(ingredientUsecases)

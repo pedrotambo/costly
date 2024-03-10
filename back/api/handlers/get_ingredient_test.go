@@ -3,7 +3,7 @@ package handlers_test
 import (
 	"context"
 	"costly/api/handlers"
-	"costly/core/domain"
+	"costly/core/model"
 	"costly/core/ports/clock"
 	"costly/core/ports/database"
 	"costly/core/ports/logger"
@@ -26,7 +26,7 @@ func runGetIngredientHandler(t *testing.T, clock clock.Clock, ingredientIDstr st
 	ingredientUsecases.CreateIngredient(context.Background(), usecases.CreateIngredientOptions{
 		Name:  "ingredientName",
 		Price: 12.43,
-		Unit:  domain.Gram,
+		Unit:  model.Gram,
 	})
 	handler := handlers.GetIngredientHandler(repo)
 

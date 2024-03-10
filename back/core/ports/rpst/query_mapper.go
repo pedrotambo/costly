@@ -2,7 +2,7 @@ package rpst
 
 import (
 	"context"
-	"costly/core/domain"
+	"costly/core/model"
 	"costly/core/ports/database"
 )
 
@@ -29,17 +29,17 @@ func queryAndMap[T any](ctx context.Context, db database.RowsQuerier, rowMapper 
 	return ts, nil
 }
 
-func mapToIngredient(rowScanner database.RowScanner) (domain.Ingredient, error) {
-	var ingredient domain.Ingredient
+func mapToIngredient(rowScanner database.RowScanner) (model.Ingredient, error) {
+	var ingredient model.Ingredient
 	err := rowScanner.Scan(&ingredient.ID, &ingredient.Name, &ingredient.Unit, &ingredient.Price, &ingredient.CreatedAt, &ingredient.LastModified, &ingredient.UnitsInStock)
 	return ingredient, err
 }
 
-func mapToRecipeIngredient(rowScanner database.RowScanner) (domain.RecipeIngredient, error) {
-	var ingredient domain.Ingredient
+func mapToRecipeIngredient(rowScanner database.RowScanner) (model.RecipeIngredient, error) {
+	var ingredient model.Ingredient
 	var recipeUnits int
 	err := rowScanner.Scan(&ingredient.ID, &ingredient.Name, &ingredient.Unit, &ingredient.Price, &ingredient.CreatedAt, &ingredient.LastModified, &ingredient.UnitsInStock, &recipeUnits)
-	return domain.RecipeIngredient{
+	return model.RecipeIngredient{
 		Ingredient: ingredient,
 		Units:      recipeUnits,
 	}, err

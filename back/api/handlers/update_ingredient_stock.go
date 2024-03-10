@@ -24,7 +24,7 @@ func parseNewStockOptions(r *http.Request) (rpst.NewStockOptions, error) {
 	return opts, nil
 }
 
-func UpdateIngredientStockHandler(ingredientRepository rpst.IngredientRepository) http.HandlerFunc {
+func UpdateIngredientStockHandler(ingredientStockUpdater rpst.IngredientStockUpdater) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ingredientIDstr := r.PathValue("ingredientID")
 		ingredientID, err := strconv.ParseInt(ingredientIDstr, 10, 64)
@@ -39,7 +39,7 @@ func UpdateIngredientStockHandler(ingredientRepository rpst.IngredientRepository
 			return
 		}
 
-		_, err = ingredientRepository.UpdateStock(r.Context(), int64(ingredientID), newStockOpts)
+		_, err = ingredientStockUpdater.UpdateStock(r.Context(), int64(ingredientID), newStockOpts)
 		if err == rpst.ErrNotFound {
 			w.WriteHeader(http.StatusNotFound)
 			return

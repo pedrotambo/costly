@@ -1,7 +1,7 @@
 package handlers
 
 import (
-	"costly/core/domain"
+	"costly/core/model"
 	"costly/core/ports/logger"
 	"costly/core/ports/rpst"
 	"net/http"
@@ -9,11 +9,11 @@ import (
 )
 
 type RecipeResponse struct {
-	domain.Recipe
+	model.Recipe
 	Cost float64 `json:"cost"`
 }
 
-func GetRecipeHandler(recipeRepository rpst.RecipeRepository) http.HandlerFunc {
+func GetRecipeHandler(recipeGetter rpst.RecipeGetter) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		recipeIDstr := r.PathValue("recipeID")
 		recipeID, err := strconv.ParseInt(recipeIDstr, 10, 64)
@@ -21,7 +21,7 @@ func GetRecipeHandler(recipeRepository rpst.RecipeRepository) http.HandlerFunc {
 			RespondJSON(w, http.StatusBadRequest, ErrBadID)
 		}
 
-		recipe, err := recipeRepository.GetRecipe(r.Context(), recipeID)
+		recipe, err := recipeGetter.GetRecipe(r.Context(), recipeID)
 		if err == rpst.ErrNotFound {
 			w.WriteHeader(http.StatusNotFound)
 			return

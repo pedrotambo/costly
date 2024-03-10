@@ -3,7 +3,7 @@ package handlers_test
 import (
 	"context"
 	"costly/api/handlers"
-	"costly/core/domain"
+	"costly/core/model"
 	"costly/core/ports/clock"
 	"costly/core/ports/database"
 	"costly/core/ports/logger"
@@ -21,24 +21,27 @@ import (
 func runGetRecipesHandler(t *testing.T, clock clock.Clock, recipeOpts []usecases.CreateRecipeOptions) *httptest.ResponseRecorder {
 	logger, _ := logger.New("debug")
 	db, _ := database.NewFromDatasource(":memory:", logger)
-	repo := rpst.New(db, clock, logger)
-	allUsecases := usecases.New(repo, clock)
-	allUsecases.CreateIngredient(context.Background(), usecases.CreateIngredientOptions{
+	useCases := usecases.New(&usecases.Ports{
+		Logger:     logger,
+		Repository: rpst.New(db, clock, logger),
+		Clock:      clock,
+	})
+	useCases.CreateIngredient(context.Background(), usecases.CreateIngredientOptions{
 		Name:  "ingr1",
 		Price: 1.50,
-		Unit:  domain.Gram,
+		Unit:  model.Gram,
 	})
-	allUsecases.CreateIngredient(context.Background(), usecases.CreateIngredientOptions{
+	useCases.CreateIngredient(context.Background(), usecases.CreateIngredientOptions{
 		Name:  "ingr2",
 		Price: 2.50,
-		Unit:  domain.Gram,
+		Unit:  model.Gram,
 	})
 
 	for _, opts := range recipeOpts {
-		allUsecases.CreateRecipe(context.Background(), opts)
+		useCases.CreateRecipe(context.Background(), opts)
 	}
 
-	handler := handlers.GetRecipesHandler(repo)
+	handler := handlers.GetRecipesHandler(useCases)
 
 	req, err := http.NewRequest("GET", "/ingredients", nil)
 	if err != nil {

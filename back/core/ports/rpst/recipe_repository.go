@@ -2,7 +2,7 @@ package rpst
 
 import (
 	"context"
-	"costly/core/domain"
+	"costly/core/model"
 	"costly/core/ports/clock"
 	"costly/core/ports/database"
 	"costly/core/ports/logger"
@@ -10,10 +10,18 @@ import (
 	"time"
 )
 
+type RecipeGetter interface {
+	GetRecipe(ctx context.Context, id int64) (model.Recipe, error)
+}
+
+type RecipesGetter interface {
+	GetRecipes(ctx context.Context) ([]model.Recipe, error)
+}
+
 type RecipeRepository interface {
-	SaveRecipe(ctx context.Context, recipe *domain.Recipe) error
-	GetRecipe(ctx context.Context, id int64) (domain.Recipe, error)
-	GetRecipes(ctx context.Context) ([]domain.Recipe, error)
+	SaveRecipe(ctx context.Context, recipe *model.Recipe) error
+	RecipeGetter
+	RecipesGetter
 }
 
 type recipeRepository struct {
@@ -33,18 +41,18 @@ func NewRecipeRepository(db database.Database, clock clock.Clock, logger logger.
 	return &recipeRepository{db, clock, logger}
 }
 
-func (r *recipeRepository) GetRecipe(ctx context.Context, id int64) (domain.Recipe, error) {
+func (r *recipeRepository) GetRecipe(ctx context.Context, id int64) (model.Recipe, error) {
 	recipeDB, err := queryRowAndMap(ctx, r.db, mapToRecipeDB, "SELECT * FROM recipe WHERE id = ?", id)
 	if err == sql.ErrNoRows {
-		return domain.Recipe{}, ErrNotFound
+		return model.Recipe{}, ErrNotFound
 	} else if err != nil {
-		return domain.Recipe{}, err
+		return model.Recipe{}, err
 	}
 	recipeIngredients, err := queryAndMap(ctx, r.db, mapToRecipeIngredient, "SELECT i.*, ri.units FROM ingredient i JOIN recipe_ingredient ri ON i.id = ri.ingredient_id AND ri.recipe_id = ?", id)
 	if err != nil {
-		return domain.Recipe{}, err
+		return model.Recipe{}, err
 	}
-	return domain.Recipe{
+	return model.Recipe{
 		ID:           recipeDB.id,
 		Name:         recipeDB.name,
 		Ingredients:  recipeIngredients,
@@ -53,18 +61,18 @@ func (r *recipeRepository) GetRecipe(ctx context.Context, id int64) (domain.Reci
 	}, nil
 }
 
-func (r *recipeRepository) GetRecipes(ctx context.Context) ([]domain.Recipe, error) {
+func (r *recipeRepository) GetRecipes(ctx context.Context) ([]model.Recipe, error) {
 	recipesDB, err := queryAndMap(ctx, r.db, mapToRecipeDB, "SELECT * FROM recipe")
 	if err != nil {
 		return nil, err
 	}
-	recipes := []domain.Recipe{}
+	recipes := []model.Recipe{}
 	for _, recipeDB := range recipesDB {
 		recipeIngredients, err := queryAndMap(ctx, r.db, mapToRecipeIngredient, "SELECT i.*, ri.units FROM ingredient i JOIN recipe_ingredient ri ON i.id = ri.ingredient_id AND ri.recipe_id = ?", recipeDB.id)
 		if err != nil {
 			return nil, err
 		}
-		recipes = append(recipes, domain.Recipe{
+		recipes = append(recipes, model.Recipe{
 			ID:           recipeDB.id,
 			Name:         recipeDB.name,
 			Ingredients:  recipeIngredients,
@@ -75,24 +83,25 @@ func (r *recipeRepository) GetRecipes(ctx context.Context) ([]domain.Recipe, err
 	return recipes, nil
 }
 
-func (r *recipeRepository) SaveRecipe(ctx context.Context, recipe *domain.Recipe) error {
-	db := r.db
-	result, err := db.ExecContext(ctx, "INSERT INTO recipe (name, created_at, last_modified) VALUES (?, ?, ?)", recipe.Name, recipe.CreatedAt, recipe.LastModified)
-	if err != nil {
-		return err
-	}
-
-	recipeID, err := result.LastInsertId()
-	if err != nil {
-		return err
-	}
-
-	for _, recipeIngredient := range recipe.Ingredients {
-		_, err = db.ExecContext(ctx, "INSERT INTO recipe_ingredient (recipe_id, ingredient_id, units) VALUES (?, ?, ?)", recipeID, recipeIngredient.Ingredient.ID, recipeIngredient.Units)
+func (r *recipeRepository) SaveRecipe(ctx context.Context, recipe *model.Recipe) error {
+	return r.db.WithTx(ctx, func(tx database.TX) error {
+		result, err := tx.ExecContext(ctx, "INSERT INTO recipe (name, created_at, last_modified) VALUES (?, ?, ?)", recipe.Name, recipe.CreatedAt, recipe.LastModified)
 		if err != nil {
 			return err
 		}
-	}
-	recipe.ID = recipeID
-	return nil
+
+		recipeID, err := result.LastInsertId()
+		if err != nil {
+			return err
+		}
+
+		for _, recipeIngredient := range recipe.Ingredients {
+			_, err = tx.ExecContext(ctx, "INSERT INTO recipe_ingredient (recipe_id, ingredient_id, units) VALUES (?, ?, ?)", recipeID, recipeIngredient.Ingredient.ID, recipeIngredient.Units)
+			if err != nil {
+				return err
+			}
+		}
+		recipe.ID = recipeID
+		return nil
+	})
 }

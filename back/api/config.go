@@ -1,4 +1,4 @@
-package core
+package api
 
 import (
 	"flag"
@@ -25,5 +25,6 @@ func LoadConfig() (*Config, error) {
 	if cfg.Database.ConnectionString == "" {
 		return &Config{}, fmt.Errorf("empty DB connection string")
 	}
+	fmt.Println(cfg)
 	return &cfg, nil
 }

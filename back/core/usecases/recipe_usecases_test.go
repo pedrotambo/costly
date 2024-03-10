@@ -2,7 +2,7 @@ package usecases_test
 
 import (
 	"context"
-	"costly/core/domain"
+	"costly/core/model"
 	"costly/core/ports/clock"
 	"costly/core/ports/database"
 	"costly/core/ports/logger"
@@ -20,29 +20,29 @@ import (
 var meat = usecases.CreateIngredientOptions{
 	Name:  "meat",
 	Price: 1.0,
-	Unit:  domain.Gram,
+	Unit:  model.Gram,
 }
 
 var salt = usecases.CreateIngredientOptions{
 	Name:  "salt",
 	Price: 10.0,
-	Unit:  domain.Gram,
+	Unit:  model.Gram,
 }
 
 var pepper = usecases.CreateIngredientOptions{
 	Name:  "pepper",
 	Price: 13.0,
-	Unit:  domain.Gram,
+	Unit:  model.Gram,
 }
 
 var ingredientOptsByName = map[string]usecases.CreateIngredientOptions{meat.Name: meat, salt.Name: salt, pepper.Name: pepper}
 
-func createDBWithIngredients(logger logger.Logger, clock clock.Clock) (database.Database, []domain.Ingredient) {
+func createDBWithIngredients(logger logger.Logger, clock clock.Clock) (database.Database, []model.Ingredient) {
 	db, _ := database.NewFromDatasource(":memory:", logger)
 	ingredientRepository := rpst.NewIngredientRepository(db, clock, logger)
 	ingredientUsecases := usecases.NewIngredientUseCases(ingredientRepository, clock)
 	ctx := context.Background()
-	var ingredients = []domain.Ingredient{}
+	var ingredients = []model.Ingredient{}
 	for _, ingredient := range []usecases.CreateIngredientOptions{meat, salt, pepper} {
 		ing, _ := ingredientUsecases.CreateIngredient(ctx, usecases.CreateIngredientOptions{
 			Name:  ingredient.Name,

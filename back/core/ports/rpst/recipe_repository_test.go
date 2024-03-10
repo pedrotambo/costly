@@ -2,7 +2,7 @@ package rpst_test
 
 import (
 	"context"
-	"costly/core/domain"
+	"costly/core/model"
 	clck "costly/core/ports/clock"
 	"costly/core/ports/database"
 	"costly/core/ports/logger"
@@ -16,31 +16,31 @@ import (
 
 var now = clck.New().Now()
 
-var meat = &domain.Ingredient{
+var meat = &model.Ingredient{
 	ID:           -1,
 	Name:         "meat",
-	Unit:         domain.Gram,
+	Unit:         model.Gram,
 	Price:        1.0,
 	UnitsInStock: 0,
 	CreatedAt:    now,
 	LastModified: now,
 }
 
-var salt = &domain.Ingredient{
+var salt = &model.Ingredient{
 	ID:           -1,
 	Name:         "salt",
 	Price:        10.0,
-	Unit:         domain.Gram,
+	Unit:         model.Gram,
 	UnitsInStock: 0,
 	CreatedAt:    now,
 	LastModified: now,
 }
 
-var pepper = &domain.Ingredient{
+var pepper = &model.Ingredient{
 	ID:           -1,
 	Name:         "pepper",
 	Price:        13.0,
-	Unit:         domain.Gram,
+	Unit:         model.Gram,
 	UnitsInStock: 0,
 	CreatedAt:    now,
 	LastModified: now,
@@ -51,7 +51,7 @@ func createDBWithIngredients(logger logger.Logger, clock clck.Clock) database.Da
 	ingredientRepository := rpst.NewIngredientRepository(db, clock, logger)
 	ctx := context.Background()
 
-	var ingredients = []*domain.Ingredient{meat, salt, pepper}
+	var ingredients = []*model.Ingredient{meat, salt, pepper}
 	for _, ingredient := range ingredients {
 		ingredientRepository.SaveIngredient(ctx, ingredient)
 	}
@@ -69,19 +69,19 @@ func TestGetRecipe(t *testing.T) {
 		repo := rpst.NewRecipeRepository(db, clock, logger)
 		ctx := context.Background()
 		now := clock.Now()
-		recipe1 := domain.Recipe{
+		recipe1 := model.Recipe{
 			ID:           -1,
 			Name:         "aName",
-			Ingredients:  []domain.RecipeIngredient{},
+			Ingredients:  []model.RecipeIngredient{},
 			CreatedAt:    now,
 			LastModified: now,
 		}
 		err := repo.SaveRecipe(ctx, &recipe1)
 		require.NoError(t, err)
-		recipe2 := domain.Recipe{
+		recipe2 := model.Recipe{
 			ID:           -1,
 			Name:         "anotherName",
-			Ingredients:  []domain.RecipeIngredient{},
+			Ingredients:  []model.RecipeIngredient{},
 			CreatedAt:    now,
 			LastModified: now,
 		}
@@ -105,19 +105,19 @@ func TestGetRecipes(t *testing.T) {
 		repo := rpst.New(db, clock, logger)
 		ctx := context.Background()
 		now := clock.Now()
-		recipe1 := domain.Recipe{
+		recipe1 := model.Recipe{
 			ID:           -1,
 			Name:         "aName",
-			Ingredients:  []domain.RecipeIngredient{},
+			Ingredients:  []model.RecipeIngredient{},
 			CreatedAt:    now,
 			LastModified: now,
 		}
 		err := repo.SaveRecipe(ctx, &recipe1)
 		require.NoError(t, err)
-		recipe2 := domain.Recipe{
+		recipe2 := model.Recipe{
 			ID:           -1,
 			Name:         "anotherName",
-			Ingredients:  []domain.RecipeIngredient{},
+			Ingredients:  []model.RecipeIngredient{},
 			CreatedAt:    now,
 			LastModified: now,
 		}
