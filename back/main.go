@@ -8,18 +8,13 @@ import (
 	"os/signal"
 	"syscall"
 
-	"costly/api"
-	"costly/core/ports/clock"
-	"costly/core/ports/database"
-	"costly/core/ports/logger"
-	"costly/core/ports/rpst"
-	"costly/core/usecases"
+	"costly/core"
 
 	_ "github.com/mattn/go-sqlite3"
 )
 
 func main() {
-	config, err := LoadConfig()
+	config, err := core.LoadConfig()
 	if err != nil {
 		fmt.Printf("Could not load configuration. Err: %s\n", err)
 		os.Exit(1)
@@ -27,7 +22,7 @@ func main() {
 
 	fmt.Println(*config)
 
-	components, err := initComponents(config)
+	components, err := core.InitComponents(config)
 
 	if err != nil {
 		fmt.Printf("Could not initialize components. Err: %s\n", err)
@@ -41,65 +36,21 @@ func main() {
 	go func() {
 		<-signalChannel
 
-		if err := components.server.Shutdown(context.Background()); err != nil {
-			components.logger.Error(err, "could not gracefully shutdown server")
+		if err := components.Server.Shutdown(context.Background()); err != nil {
+			components.Logger.Error(err, "could not gracefully shutdown server")
 		}
 
 		done <- true
 	}()
 
-	if err := components.server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-		components.logger.Error(err, "could not start server")
+	if err := components.Server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+		components.Logger.Error(err, "could not start server")
 		os.Exit(1)
 	}
 
 	<-done
 
-	components.logger.Info("app stopped")
+	components.Logger.Info("app stopped")
 
 	fmt.Println(done)
-}
-
-type AppComponents struct {
-	logger     logger.Logger
-	database   database.Database
-	server     *http.Server
-	clock      clock.Clock
-	repository rpst.Repository
-}
-
-func initComponents(config *Config) (AppComponents, error) {
-	logger, err := logger.New(config.LogLevel)
-	if err != nil {
-		fmt.Printf("Could not create logger. Err: %s\n", err)
-		os.Exit(1)
-	}
-
-	logger.Info("Running server...")
-
-	database, err := database.New(config.Database.ConnectionString, logger)
-	if err != nil {
-		logger.Error(err, "could not initialize database")
-		os.Exit(1)
-	}
-
-	loggerMiddleware := api.NewLoggerMiddleware(logger)
-	authMiddleware := api.NewAuthMiddleware([]byte(config.AuthSecret), logger)
-
-	clock := clock.New()
-	repository := rpst.New(database, clock, logger)
-	useCases := usecases.New(repository, clock)
-	router := api.NewRouter(repository, useCases, authMiddleware, loggerMiddleware)
-	server := http.Server{
-		Addr:    config.ListenAddress,
-		Handler: router,
-	}
-
-	return AppComponents{
-		logger:     logger,
-		database:   database,
-		server:     &server,
-		clock:      clock,
-		repository: repository,
-	}, nil
 }
