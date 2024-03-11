@@ -33,10 +33,5 @@ func (re *ErrorResponse) Error() string {
 	return fmt.Sprintf("error code: %s, message: %s", re.APIError.Code, re.APIError.Message)
 }
 
-var ErrBadName = NewInvalidInputResponseError("name is invalid")
-var ErrBadUnit = NewInvalidInputResponseError("unit is invalid")
-var ErrBadPrice = NewInvalidInputResponseError("price is invalid")
 var ErrBadID = NewInvalidInputResponseError("id is invalid")
-var ErrBadStockUnits = NewInvalidInputResponseError("units should be more than 0")
 var ErrBadJson = NewErrorResponse("INVALID_JSON", "error unmarshalling request body")
-var ErrBadIngrs = NewInvalidInputResponseError("recipe must have at least one ingredient")

@@ -2,11 +2,12 @@ package rpst_test
 
 import (
 	"context"
+	"costly/core/components/ingredients/internal/rpst"
+	"costly/core/errs"
 	"costly/core/model"
 	"costly/core/ports/clock"
 	"costly/core/ports/database"
 	"costly/core/ports/logger"
-	"costly/core/ports/rpst"
 	"database/sql"
 	"errors"
 	"testing"
@@ -24,7 +25,7 @@ func TestGetIngredient(t *testing.T) {
 	t.Run("should get correct ingredient if existent", func(t *testing.T) {
 		db, _ := database.NewFromDatasource(":memory:", logger)
 
-		ingredientRepository := rpst.NewIngredientRepository(db, clock, logger)
+		ingredientRepository := rpst.New(db, logger)
 		ctx := context.Background()
 		now := clock.Now()
 		ingredient := &model.Ingredient{
@@ -36,7 +37,7 @@ func TestGetIngredient(t *testing.T) {
 			CreatedAt:    now,
 			LastModified: now,
 		}
-		err := ingredientRepository.SaveIngredient(ctx, ingredient)
+		err := ingredientRepository.Add(ctx, ingredient)
 		require.NoError(t, err)
 
 		ingredient2 := &model.Ingredient{
@@ -48,10 +49,10 @@ func TestGetIngredient(t *testing.T) {
 			CreatedAt:    now,
 			LastModified: now,
 		}
-		err = ingredientRepository.SaveIngredient(ctx, ingredient2)
+		err = ingredientRepository.Add(ctx, ingredient2)
 		require.NoError(t, err)
 
-		ingr1Get, err := ingredientRepository.GetIngredient(ctx, ingredient.ID)
+		ingr1Get, err := ingredientRepository.Find(ctx, ingredient.ID)
 		require.NoError(t, err)
 
 		assert.Equal(t, ingredient, &ingr1Get)
@@ -59,12 +60,12 @@ func TestGetIngredient(t *testing.T) {
 
 	t.Run("should return error when requesting an inexistent ingredient", func(t *testing.T) {
 		db, _ := database.NewFromDatasource(":memory:", logger)
-		ingredientRepository := rpst.NewIngredientRepository(db, clock, logger)
+		ingredientRepository := rpst.New(db, logger)
 
-		_, err := ingredientRepository.GetIngredient(context.Background(), 123)
+		_, err := ingredientRepository.Find(context.Background(), 123)
 
 		require.Error(t, err)
-		assert.Equal(t, err, rpst.ErrNotFound)
+		assert.Equal(t, err, errs.ErrNotFound)
 	})
 }
 
@@ -76,7 +77,7 @@ func TestGetIngredients(t *testing.T) {
 	t.Run("should get list of existent ingredients", func(t *testing.T) {
 		db, _ := database.NewFromDatasource(":memory:", logger)
 
-		ingredientRepository := rpst.NewIngredientRepository(db, clock, logger)
+		ingredientRepository := rpst.New(db, logger)
 		ctx := context.Background()
 		now := clock.Now()
 		ingredient := &model.Ingredient{
@@ -88,7 +89,7 @@ func TestGetIngredients(t *testing.T) {
 			CreatedAt:    now,
 			LastModified: now,
 		}
-		err := ingredientRepository.SaveIngredient(ctx, ingredient)
+		err := ingredientRepository.Add(ctx, ingredient)
 		require.NoError(t, err)
 
 		ingredient2 := &model.Ingredient{
@@ -100,10 +101,10 @@ func TestGetIngredients(t *testing.T) {
 			CreatedAt:    now,
 			LastModified: now,
 		}
-		err = ingredientRepository.SaveIngredient(ctx, ingredient2)
+		err = ingredientRepository.Add(ctx, ingredient2)
 		require.NoError(t, err)
 
-		ingredients, err := ingredientRepository.GetIngredients(ctx)
+		ingredients, err := ingredientRepository.FindAll(ctx)
 		require.NoError(t, err)
 
 		assert.Equal(t, ingredient, &ingredients[0])
@@ -118,7 +119,7 @@ func TestAddIngredientStock(t *testing.T) {
 	t.Run("should add ingredient units in stock correctly", func(t *testing.T) {
 		db, _ := database.NewFromDatasource(":memory:", logger)
 
-		ingredientRepository := rpst.NewIngredientRepository(db, clock, logger)
+		ingredientRepository := rpst.New(db, logger)
 		ctx := context.Background()
 		now := clock.Now()
 		ingredient := &model.Ingredient{
@@ -130,17 +131,17 @@ func TestAddIngredientStock(t *testing.T) {
 			CreatedAt:    now,
 			LastModified: now,
 		}
-		err := ingredientRepository.SaveIngredient(ctx, ingredient)
+		err := ingredientRepository.Add(ctx, ingredient)
 		require.NoError(t, err)
 
-		ingredientRepository.SaveIngredientStock(ctx, &model.IngredientStock{
+		ingredientRepository.AddStock(ctx, &model.IngredientStock{
 			ID:           -1,
 			IngredientID: ingredient.ID,
 			Price:        1.0,
 			Units:        5,
 			CreatedAt:    clock.Now(),
 		})
-		ingredientRepository.SaveIngredientStock(ctx, &model.IngredientStock{
+		ingredientRepository.AddStock(ctx, &model.IngredientStock{
 			ID:           -1,
 			IngredientID: ingredient.ID,
 			Price:        2.0,
@@ -148,7 +149,7 @@ func TestAddIngredientStock(t *testing.T) {
 			CreatedAt:    clock.Now(),
 		})
 
-		modifiedIngredient, err := ingredientRepository.GetIngredient(ctx, ingredient.ID)
+		modifiedIngredient, err := ingredientRepository.Find(ctx, ingredient.ID)
 		require.NoError(t, err)
 
 		assert.Equal(t, ingredient.UnitsInStock+5+7, modifiedIngredient.UnitsInStock)
@@ -157,7 +158,7 @@ func TestAddIngredientStock(t *testing.T) {
 	t.Run("when adding ingredient stock should update price correctly", func(t *testing.T) {
 		db, _ := database.NewFromDatasource(":memory:", logger)
 
-		ingredientRepository := rpst.NewIngredientRepository(db, clock, logger)
+		ingredientRepository := rpst.New(db, logger)
 		ctx := context.Background()
 		now := clock.Now()
 		ingredient := &model.Ingredient{
@@ -169,17 +170,17 @@ func TestAddIngredientStock(t *testing.T) {
 			CreatedAt:    now,
 			LastModified: now,
 		}
-		err := ingredientRepository.SaveIngredient(ctx, ingredient)
+		err := ingredientRepository.Add(ctx, ingredient)
 		require.NoError(t, err)
 
-		ingredientRepository.SaveIngredientStock(ctx, &model.IngredientStock{
+		ingredientRepository.AddStock(ctx, &model.IngredientStock{
 			ID:           -1,
 			IngredientID: ingredient.ID,
 			Price:        1.0,
 			Units:        5,
 			CreatedAt:    clock.Now(),
 		})
-		ingredientRepository.SaveIngredientStock(ctx, &model.IngredientStock{
+		ingredientRepository.AddStock(ctx, &model.IngredientStock{
 			ID:           -1,
 			IngredientID: ingredient.ID,
 			Price:        2.0,
@@ -187,7 +188,7 @@ func TestAddIngredientStock(t *testing.T) {
 			CreatedAt:    clock.Now(),
 		})
 
-		modifiedIngredient, err := ingredientRepository.GetIngredient(ctx, ingredient.ID)
+		modifiedIngredient, err := ingredientRepository.Find(ctx, ingredient.ID)
 		require.NoError(t, err)
 
 		assert.Equal(t, 2.0, modifiedIngredient.Price)
@@ -195,7 +196,7 @@ func TestAddIngredientStock(t *testing.T) {
 
 	t.Run("adding stock of inexistent ingredient should return error", func(t *testing.T) {
 		db, _ := database.NewFromDatasource(":memory:", logger)
-		ingredientRepository := rpst.NewIngredientRepository(db, clock, logger)
+		ingredientRepository := rpst.New(db, logger)
 		ctx := context.Background()
 		now := clock.Now()
 		ingredient := &model.Ingredient{
@@ -207,10 +208,10 @@ func TestAddIngredientStock(t *testing.T) {
 			CreatedAt:    now,
 			LastModified: now,
 		}
-		err := ingredientRepository.SaveIngredient(ctx, ingredient)
+		err := ingredientRepository.Add(ctx, ingredient)
 		require.NoError(t, err)
 
-		ingredientRepository.SaveIngredientStock(ctx, &model.IngredientStock{
+		ingredientRepository.AddStock(ctx, &model.IngredientStock{
 			ID:           -1,
 			IngredientID: ingredient.ID,
 			Price:        1.0,
@@ -219,7 +220,7 @@ func TestAddIngredientStock(t *testing.T) {
 		})
 		require.NoError(t, err)
 
-		err = ingredientRepository.SaveIngredientStock(ctx, &model.IngredientStock{
+		err = ingredientRepository.AddStock(ctx, &model.IngredientStock{
 			ID:           -1,
 			IngredientID: ingredient.ID + 1,
 			Price:        1.0,
@@ -227,13 +228,13 @@ func TestAddIngredientStock(t *testing.T) {
 			CreatedAt:    clock.Now(),
 		})
 		require.Error(t, err)
-		assert.Equal(t, err, rpst.ErrNotFound)
+		assert.Equal(t, err, errs.ErrNotFound)
 	})
 
 	t.Run("add ingredient stock should return error if query returns error", func(t *testing.T) {
 		db := new(databaseMock)
-		ingredientRepository := rpst.NewIngredientRepository(db, clock, logger)
-		err := ingredientRepository.SaveIngredientStock(context.Background(), &model.IngredientStock{
+		ingredientRepository := rpst.New(db, logger)
+		err := ingredientRepository.AddStock(context.Background(), &model.IngredientStock{
 			ID:           -1,
 			IngredientID: 1,
 			Price:        1.0,

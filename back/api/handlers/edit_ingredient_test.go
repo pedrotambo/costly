@@ -4,12 +4,12 @@ import (
 	"bytes"
 	"context"
 	"costly/api/handlers"
+	"costly/core/components/ingredients"
+	"costly/core/mocks"
 	"costly/core/model"
 	"costly/core/ports/clock"
 	"costly/core/ports/database"
 	"costly/core/ports/logger"
-	"costly/core/ports/rpst"
-	"costly/core/usecases"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -23,15 +23,14 @@ import (
 func runEditIngredientHandler(t *testing.T, clock clock.Clock, ingredientIDstr string, reqBody io.Reader) *httptest.ResponseRecorder {
 	logger, _ := logger.New("debug")
 	db, _ := database.NewFromDatasource(":memory:", logger)
-	repo := rpst.NewIngredientRepository(db, clock, logger)
-	ingredientUsecases := usecases.NewIngredientUseCases(repo, clock)
-	ingredientUsecases.CreateIngredient(context.Background(), usecases.CreateIngredientOptions{
+	ingredientComponent := ingredients.New(db, clock, logger)
+	ingredientComponent.Create(context.Background(), ingredients.CreateIngredientOptions{
 		Name:  "ingredientName",
 		Price: 12.43,
 		Unit:  model.Gram,
 	})
 
-	handler := handlers.EditIngredientHandler(ingredientUsecases)
+	handler := handlers.EditIngredientHandler(ingredientComponent)
 
 	req, err := http.NewRequest("PUT", "/ingredients/"+ingredientIDstr, reqBody)
 	if err != nil {
@@ -46,7 +45,7 @@ func runEditIngredientHandler(t *testing.T, clock clock.Clock, ingredientIDstr s
 }
 
 func TestHandleEditIngredient(t *testing.T) {
-	clock := new(clockMock)
+	clock := new(mocks.ClockMock)
 	now := time.UnixMilli(12345).UTC()
 	clock.On("Now").Return(now)
 

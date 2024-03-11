@@ -3,12 +3,11 @@ package handlers_test
 import (
 	"bytes"
 	"costly/api/handlers"
+	"costly/core/components/ingredients"
+	"costly/core/mocks"
 	"costly/core/ports/clock"
 	"costly/core/ports/database"
 	"costly/core/ports/logger"
-	"costly/core/ports/rpst"
-	"costly/core/usecases"
-	"fmt"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -17,29 +16,13 @@ import (
 
 	_ "github.com/mattn/go-sqlite3"
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/mock"
 )
-
-type clockMock struct {
-	mock.Mock
-}
-
-func (m *clockMock) Now() time.Time {
-	args := m.Called()
-	value := args.Get(0)
-	now, ok := value.(time.Time)
-	if !ok {
-		panic(fmt.Errorf("Error getting now"))
-	}
-	return now
-}
 
 func runCreateIngredientHandler(t *testing.T, clock clock.Clock, reqBody io.Reader) *httptest.ResponseRecorder {
 	logger, _ := logger.New("debug")
 	db, _ := database.NewFromDatasource(":memory:", logger)
-	repo := rpst.NewIngredientRepository(db, clock, logger)
-	ingredientUsecases := usecases.NewIngredientUseCases(repo, clock)
-	handler := handlers.CreateIngredientHandler(ingredientUsecases)
+	ingredientComponent := ingredients.New(db, clock, logger)
+	handler := handlers.CreateIngredientHandler(ingredientComponent)
 
 	req, err := http.NewRequest("POST", "/ingredients", reqBody)
 	if err != nil {
@@ -52,7 +35,7 @@ func runCreateIngredientHandler(t *testing.T, clock clock.Clock, reqBody io.Read
 }
 
 func TestHandleCreateIngredient(t *testing.T) {
-	clock := new(clockMock)
+	clock := new(mocks.ClockMock)
 	now := time.UnixMilli(12345).UTC()
 	clock.On("Now").Return(now)
 

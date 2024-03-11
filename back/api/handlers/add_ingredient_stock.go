@@ -1,31 +1,15 @@
 package handlers
 
 import (
+	"costly/core/components/ingredients"
+	"costly/core/errs"
 	"costly/core/ports/logger"
-	"costly/core/ports/rpst"
-	"costly/core/usecases"
+	"errors"
 	"net/http"
 	"strconv"
 )
 
-func parseIngredientStockOptions(r *http.Request) (usecases.IngredientStockOptions, error) {
-	opts := usecases.IngredientStockOptions{}
-	if err := UnmarshallJSONBody(r, &opts); err != nil {
-		return usecases.IngredientStockOptions{}, ErrBadJson
-	}
-
-	if opts.Units <= 0 {
-		return usecases.IngredientStockOptions{}, ErrBadStockUnits
-	}
-
-	if opts.Price <= 0 {
-		return usecases.IngredientStockOptions{}, ErrBadPrice
-	}
-
-	return opts, nil
-}
-
-func AddIngredientStockHandler(ingredientStockAdder usecases.IngredientStockAdder) http.HandlerFunc {
+func AddIngredientStockHandler(ingredientStockAdder ingredients.IngredientStockAdder) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ingredientIDstr := r.PathValue("ingredientID")
 		ingredientID, err := strconv.ParseInt(ingredientIDstr, 10, 64)
@@ -33,15 +17,16 @@ func AddIngredientStockHandler(ingredientStockAdder usecases.IngredientStockAdde
 			RespondJSON(w, http.StatusBadRequest, ErrBadID)
 			return
 		}
-
-		ingredientStockOptions, err := parseIngredientStockOptions(r)
-		if err != nil {
-			RespondJSON(w, http.StatusBadRequest, err)
+		ingredientStockOptions := ingredients.IngredientStockOptions{}
+		if err := UnmarshallJSONBody(r, &ingredientStockOptions); err != nil {
+			RespondJSON(w, http.StatusBadRequest, ErrBadJson)
 			return
 		}
-
-		ingredientStock, err := ingredientStockAdder.AddIngredientStock(r.Context(), int64(ingredientID), ingredientStockOptions)
-		if err == rpst.ErrNotFound {
+		ingredientStock, err := ingredientStockAdder.AddStock(r.Context(), int64(ingredientID), ingredientStockOptions)
+		if errors.Is(err, errs.ErrBadOpts) {
+			RespondJSON(w, http.StatusBadRequest, NewInvalidInputResponseError(err.Error()))
+			return
+		} else if err == errs.ErrNotFound {
 			w.WriteHeader(http.StatusNotFound)
 			return
 		} else if err != nil {

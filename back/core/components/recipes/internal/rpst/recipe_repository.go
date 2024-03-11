@@ -2,32 +2,23 @@ package rpst
 
 import (
 	"context"
+	"costly/core/errs"
 	"costly/core/model"
-	"costly/core/ports/clock"
 	"costly/core/ports/database"
 	"costly/core/ports/logger"
 	"database/sql"
 	"time"
 )
 
-type RecipeGetter interface {
-	GetRecipe(ctx context.Context, id int64) (model.Recipe, error)
-}
-
-type RecipesGetter interface {
-	GetRecipes(ctx context.Context) ([]model.Recipe, error)
-}
-
 type RecipeRepository interface {
-	SaveRecipe(ctx context.Context, recipe *model.Recipe) error
-	RecipeGetter
-	RecipesGetter
-	SaveRecipeSales(ctx context.Context, recipeSales *model.RecipeSales) error
+	Add(ctx context.Context, recipe *model.Recipe) error
+	Find(ctx context.Context, id int64) (model.Recipe, error)
+	FindAll(ctx context.Context) ([]model.Recipe, error)
+	AddSales(ctx context.Context, recipeSales *model.RecipeSales) error
 }
 
 type recipeRepository struct {
 	db     database.Database
-	clock  clock.Clock
 	logger logger.Logger
 }
 
@@ -38,18 +29,22 @@ type recipeDB struct {
 	lastModified time.Time
 }
 
-func NewRecipeRepository(db database.Database, clock clock.Clock, logger logger.Logger) RecipeRepository {
-	return &recipeRepository{db, clock, logger}
+func New(db database.Database, logger logger.Logger) RecipeRepository {
+	return &recipeRepository{db, logger}
 }
 
-func (r *recipeRepository) GetRecipe(ctx context.Context, id int64) (model.Recipe, error) {
-	recipeDB, err := queryRowAndMap(ctx, r.db, mapToRecipeDB, "SELECT * FROM recipe WHERE id = ?", id)
+func (r *recipeRepository) Find(ctx context.Context, id int64) (model.Recipe, error) {
+	return findRecipe(ctx, r.db, id)
+}
+
+func findRecipe(ctx context.Context, tx database.TX, id int64) (model.Recipe, error) {
+	recipeDB, err := database.QueryRowAndMap(ctx, tx, mapToRecipeDB, "SELECT * FROM recipe WHERE id = ?", id)
 	if err == sql.ErrNoRows {
-		return model.Recipe{}, ErrNotFound
+		return model.Recipe{}, errs.ErrNotFound
 	} else if err != nil {
 		return model.Recipe{}, err
 	}
-	recipeIngredients, err := queryAndMap(ctx, r.db, mapToRecipeIngredient, "SELECT i.*, ri.units FROM ingredient i JOIN recipe_ingredient ri ON i.id = ri.ingredient_id AND ri.recipe_id = ?", id)
+	recipeIngredients, err := database.QueryAndMap(ctx, tx, mapToRecipeIngredient, "SELECT i.*, ri.units FROM ingredient i JOIN recipe_ingredient ri ON i.id = ri.ingredient_id AND ri.recipe_id = ?", id)
 	if err != nil {
 		return model.Recipe{}, err
 	}
@@ -62,34 +57,14 @@ func (r *recipeRepository) GetRecipe(ctx context.Context, id int64) (model.Recip
 	}, nil
 }
 
-func getRecipe(ctx context.Context, tx database.TX, id int64) (model.Recipe, error) {
-	recipeDB, err := queryRowAndMap(ctx, tx, mapToRecipeDB, "SELECT * FROM recipe WHERE id = ?", id)
-	if err == sql.ErrNoRows {
-		return model.Recipe{}, ErrNotFound
-	} else if err != nil {
-		return model.Recipe{}, err
-	}
-	recipeIngredients, err := queryAndMap(ctx, tx, mapToRecipeIngredient, "SELECT i.*, ri.units FROM ingredient i JOIN recipe_ingredient ri ON i.id = ri.ingredient_id AND ri.recipe_id = ?", id)
-	if err != nil {
-		return model.Recipe{}, err
-	}
-	return model.Recipe{
-		ID:           recipeDB.id,
-		Name:         recipeDB.name,
-		Ingredients:  recipeIngredients,
-		CreatedAt:    recipeDB.createdAt,
-		LastModified: recipeDB.lastModified,
-	}, nil
-}
-
-func (r *recipeRepository) GetRecipes(ctx context.Context) ([]model.Recipe, error) {
-	recipesDB, err := queryAndMap(ctx, r.db, mapToRecipeDB, "SELECT * FROM recipe")
+func (r *recipeRepository) FindAll(ctx context.Context) ([]model.Recipe, error) {
+	recipesDB, err := database.QueryAndMap(ctx, r.db, mapToRecipeDB, "SELECT * FROM recipe")
 	if err != nil {
 		return nil, err
 	}
 	recipes := []model.Recipe{}
 	for _, recipeDB := range recipesDB {
-		recipeIngredients, err := queryAndMap(ctx, r.db, mapToRecipeIngredient, "SELECT i.*, ri.units FROM ingredient i JOIN recipe_ingredient ri ON i.id = ri.ingredient_id AND ri.recipe_id = ?", recipeDB.id)
+		recipeIngredients, err := database.QueryAndMap(ctx, r.db, mapToRecipeIngredient, "SELECT i.*, ri.units FROM ingredient i JOIN recipe_ingredient ri ON i.id = ri.ingredient_id AND ri.recipe_id = ?", recipeDB.id)
 		if err != nil {
 			return nil, err
 		}
@@ -104,7 +79,7 @@ func (r *recipeRepository) GetRecipes(ctx context.Context) ([]model.Recipe, erro
 	return recipes, nil
 }
 
-func (r *recipeRepository) SaveRecipe(ctx context.Context, recipe *model.Recipe) error {
+func (r *recipeRepository) Add(ctx context.Context, recipe *model.Recipe) error {
 	return r.db.WithTx(ctx, func(tx database.TX) error {
 		result, err := tx.ExecContext(ctx, "INSERT INTO recipe (name, created_at, last_modified) VALUES (?, ?, ?)", recipe.Name, recipe.CreatedAt, recipe.LastModified)
 		if err != nil {
@@ -127,10 +102,10 @@ func (r *recipeRepository) SaveRecipe(ctx context.Context, recipe *model.Recipe)
 	})
 }
 
-func (r *recipeRepository) SaveRecipeSales(ctx context.Context, recipeSales *model.RecipeSales) error {
+func (r *recipeRepository) AddSales(ctx context.Context, recipeSales *model.RecipeSales) error {
 	return r.db.WithTx(ctx, func(tx database.TX) error {
 
-		recipe, err := getRecipe(ctx, tx, recipeSales.RecipeID)
+		recipe, err := findRecipe(ctx, tx, recipeSales.RecipeID)
 
 		if err != nil {
 			return err
@@ -145,7 +120,7 @@ func (r *recipeRepository) SaveRecipeSales(ctx context.Context, recipeSales *mod
 			if rows, err := res.RowsAffected(); err != nil {
 				return err
 			} else if rows == 0 {
-				return ErrNotFound
+				return errs.ErrNotFound
 			}
 		}
 
@@ -165,4 +140,20 @@ func (r *recipeRepository) SaveRecipeSales(ctx context.Context, recipeSales *mod
 		recipeSales.ID = recipeSalesID
 		return nil
 	})
+}
+
+func mapToRecipeIngredient(rowScanner database.RowScanner) (model.RecipeIngredient, error) {
+	var ingredient model.Ingredient
+	var recipeUnits int
+	err := rowScanner.Scan(&ingredient.ID, &ingredient.Name, &ingredient.Unit, &ingredient.Price, &ingredient.CreatedAt, &ingredient.LastModified, &ingredient.UnitsInStock, &recipeUnits)
+	return model.RecipeIngredient{
+		Ingredient: ingredient,
+		Units:      recipeUnits,
+	}, err
+}
+
+func mapToRecipeDB(rowScanner database.RowScanner) (recipeDB, error) {
+	var recipe recipeDB
+	err := rowScanner.Scan(&recipe.id, &recipe.name, &recipe.createdAt, &recipe.lastModified)
+	return recipe, err
 }

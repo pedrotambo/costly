@@ -1,20 +1,19 @@
 package handlers
 
 import (
+	"costly/core/components/recipes"
 	"costly/core/ports/logger"
-	"costly/core/ports/rpst"
 	"net/http"
 )
 
-func GetRecipesHandler(recipesGetter rpst.RecipesGetter) http.HandlerFunc {
+func GetRecipesHandler(recipesGetter recipes.RecipesFinder) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		recipes, err := recipesGetter.GetRecipes(r.Context())
+		recipes, err := recipesGetter.FindAll(r.Context())
 		if err != nil {
 			logger.Error(r.Context(), err, "error getting recipes")
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
-
 		recipeResponses := []RecipeResponse{}
 		for _, recipe := range recipes {
 			recipeResponses = append(recipeResponses, RecipeResponse{
@@ -22,7 +21,6 @@ func GetRecipesHandler(recipesGetter rpst.RecipesGetter) http.HandlerFunc {
 				Cost:   recipe.Cost(),
 			})
 		}
-
 		RespondJSON(w, 200, recipeResponses)
 	}
 }

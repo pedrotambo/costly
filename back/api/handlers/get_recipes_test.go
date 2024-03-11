@@ -3,12 +3,13 @@ package handlers_test
 import (
 	"context"
 	"costly/api/handlers"
+	"costly/core/components/ingredients"
+	"costly/core/components/recipes"
+	"costly/core/mocks"
 	"costly/core/model"
 	"costly/core/ports/clock"
 	"costly/core/ports/database"
 	"costly/core/ports/logger"
-	"costly/core/ports/rpst"
-	"costly/core/usecases"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -18,30 +19,27 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func runGetRecipesHandler(t *testing.T, clock clock.Clock, recipeOpts []usecases.CreateRecipeOptions) *httptest.ResponseRecorder {
+func runGetRecipesHandler(t *testing.T, clock clock.Clock, recipeOpts []recipes.CreateRecipeOptions) *httptest.ResponseRecorder {
 	logger, _ := logger.New("debug")
 	db, _ := database.NewFromDatasource(":memory:", logger)
-	useCases := usecases.New(&usecases.Ports{
-		Logger:     logger,
-		Repository: rpst.New(db, clock, logger),
-		Clock:      clock,
-	})
-	useCases.CreateIngredient(context.Background(), usecases.CreateIngredientOptions{
+	ingredientComponent := ingredients.New(db, clock, logger)
+	recipeComponent := recipes.New(db, clock, logger, ingredientComponent)
+	ingredientComponent.Create(context.Background(), ingredients.CreateIngredientOptions{
 		Name:  "ingr1",
 		Price: 1.50,
 		Unit:  model.Gram,
 	})
-	useCases.CreateIngredient(context.Background(), usecases.CreateIngredientOptions{
+	ingredientComponent.Create(context.Background(), ingredients.CreateIngredientOptions{
 		Name:  "ingr2",
 		Price: 2.50,
 		Unit:  model.Gram,
 	})
 
 	for _, opts := range recipeOpts {
-		useCases.CreateRecipe(context.Background(), opts)
+		recipeComponent.Create(context.Background(), opts)
 	}
 
-	handler := handlers.GetRecipesHandler(useCases)
+	handler := handlers.GetRecipesHandler(recipeComponent)
 
 	req, err := http.NewRequest("GET", "/ingredients", nil)
 	if err != nil {
@@ -56,22 +54,22 @@ func runGetRecipesHandler(t *testing.T, clock clock.Clock, recipeOpts []usecases
 }
 
 func TestHandleGetRecipes(t *testing.T) {
-	clock := new(clockMock)
+	clock := new(mocks.ClockMock)
 	now := time.UnixMilli(12345).UTC()
 	clock.On("Now").Return(now)
 
 	testCases := []struct {
 		name       string
-		recipes    []usecases.CreateRecipeOptions
+		recipes    []recipes.CreateRecipeOptions
 		expected   string
 		statusCode int
 	}{
 		{
 			name: "should get recipes",
-			recipes: []usecases.CreateRecipeOptions{
+			recipes: []recipes.CreateRecipeOptions{
 				{
 					Name: "recipe1",
-					Ingredients: []usecases.RecipeIngredientOptions{
+					Ingredients: []recipes.RecipeIngredientOptions{
 						{
 							ID:    1,
 							Units: 1,
@@ -84,7 +82,7 @@ func TestHandleGetRecipes(t *testing.T) {
 				},
 				{
 					Name: "recipe2",
-					Ingredients: []usecases.RecipeIngredientOptions{
+					Ingredients: []recipes.RecipeIngredientOptions{
 						{
 							ID:    2,
 							Units: 3,
@@ -152,7 +150,7 @@ func TestHandleGetRecipes(t *testing.T) {
 		},
 		{
 			name:       "should get empty ingredients",
-			recipes:    []usecases.CreateRecipeOptions{},
+			recipes:    []recipes.CreateRecipeOptions{},
 			expected:   `[]`,
 			statusCode: http.StatusOK,
 		},

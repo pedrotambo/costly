@@ -2,11 +2,8 @@ package api
 
 import (
 	"context"
-	"costly/core/ports/clock"
-	"costly/core/ports/database"
+	comps "costly/core/components"
 	"costly/core/ports/logger"
-	"costly/core/ports/rpst"
-	"costly/core/usecases"
 	"fmt"
 	"net/http"
 	"os"
@@ -19,26 +16,20 @@ type Server interface {
 }
 
 type server struct {
-	httpServer   *http.Server
-	portAdapters *usecases.Ports
+	httpServer *http.Server
+	logger     logger.Logger
 }
 
-func NewServer(config *Config) Server {
-	portAdapters, err := initPortAdapters(config)
-	if err != nil {
-		fmt.Printf("Could not initialize components. Err: %s\n", err)
-		os.Exit(1)
-	}
-	logger := portAdapters.Logger
+func NewServer(listenAddress string, authSecret string, components *comps.Components, logger logger.Logger) Server {
 	loggerMiddleware := NewLoggerMiddleware(logger)
-	authMiddleware := NewAuthMiddleware([]byte(config.AuthSecret), logger)
-	router := NewRouter(usecases.New(portAdapters), authMiddleware, loggerMiddleware)
+	authMiddleware := NewAuthMiddleware([]byte(authSecret), logger)
+	router := NewRouter(components, authMiddleware, loggerMiddleware)
 	return &server{
 		httpServer: &http.Server{
-			Addr:    config.ListenAddress,
+			Addr:    listenAddress,
 			Handler: router,
 		},
-		portAdapters: portAdapters,
+		logger: logger,
 	}
 }
 
@@ -46,7 +37,7 @@ func (s *server) Start() {
 	done := make(chan bool, 1)
 	signalChannel := make(chan os.Signal, 1)
 	signal.Notify(signalChannel, syscall.SIGINT, syscall.SIGTERM)
-	logger := s.portAdapters.Logger
+	logger := s.logger
 	logger.Info("Running server...")
 
 	go func() {
@@ -69,24 +60,4 @@ func (s *server) Start() {
 	logger.Info("app stopped")
 
 	fmt.Println(done)
-}
-
-func initPortAdapters(config *Config) (*usecases.Ports, error) {
-	logger, err := logger.New(config.LogLevel)
-	if err != nil {
-		fmt.Printf("Could not create logger. Err: %s\n", err)
-		os.Exit(1)
-	}
-	database, err := database.New(config.Database.ConnectionString, logger)
-	if err != nil {
-		logger.Error(err, "could not initialize database")
-		os.Exit(1)
-	}
-	clock := clock.New()
-	repository := rpst.New(database, clock, logger)
-	return &usecases.Ports{
-		Logger:     logger,
-		Repository: repository,
-		Clock:      clock,
-	}, nil
 }

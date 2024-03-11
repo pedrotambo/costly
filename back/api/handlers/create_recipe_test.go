@@ -4,12 +4,13 @@ import (
 	"bytes"
 	"context"
 	"costly/api/handlers"
+	"costly/core/components/ingredients"
+	"costly/core/components/recipes"
+	"costly/core/mocks"
 	"costly/core/model"
 	"costly/core/ports/clock"
 	"costly/core/ports/database"
 	"costly/core/ports/logger"
-	"costly/core/ports/rpst"
-	"costly/core/usecases"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -23,23 +24,20 @@ import (
 func runCreateRecipeHandler(t *testing.T, clock clock.Clock, reqBody io.Reader) *httptest.ResponseRecorder {
 	logger, _ := logger.New("debug")
 	db, _ := database.NewFromDatasource(":memory:", logger)
-	useCases := usecases.New(&usecases.Ports{
-		Logger:     logger,
-		Repository: rpst.New(db, clock, logger),
-		Clock:      clock,
-	})
-	useCases.CreateIngredient(context.Background(), usecases.CreateIngredientOptions{
+	ingredientComponent := ingredients.New(db, clock, logger)
+	recipeComponent := recipes.New(db, clock, logger, ingredientComponent)
+	ingredientComponent.Create(context.Background(), ingredients.CreateIngredientOptions{
 		Name:  "ingr1",
 		Price: 1.50,
 		Unit:  model.Gram,
 	})
-	useCases.CreateIngredient(context.Background(), usecases.CreateIngredientOptions{
+	ingredientComponent.Create(context.Background(), ingredients.CreateIngredientOptions{
 		Name:  "ingr2",
 		Price: 2.50,
 		Unit:  model.Gram,
 	})
 
-	handler := handlers.CreateRecipeHandler(useCases)
+	handler := handlers.CreateRecipeHandler(recipeComponent)
 
 	req, err := http.NewRequest("POST", "/recipes", reqBody)
 	if err != nil {
@@ -54,7 +52,7 @@ func runCreateRecipeHandler(t *testing.T, clock clock.Clock, reqBody io.Reader) 
 }
 
 func TestHandleCreateRecipe(t *testing.T) {
-	clock := new(clockMock)
+	clock := new(mocks.ClockMock)
 	now := time.UnixMilli(12345).UTC()
 	clock.On("Now").Return(now)
 

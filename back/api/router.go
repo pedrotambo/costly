@@ -3,7 +3,7 @@ package api
 import (
 	"costly/api/handlers"
 
-	"costly/core/usecases"
+	comps "costly/core/components"
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
@@ -20,7 +20,7 @@ func init() {
 
 type Middleware func(http.Handler) http.Handler
 
-func NewRouter(useCases usecases.UseCases, authMiddleware Middleware, middlewares ...Middleware) http.Handler {
+func NewRouter(components *comps.Components, authMiddleware Middleware, middlewares ...Middleware) http.Handler {
 	r := chi.NewRouter()
 
 	for _, m := range middlewares {
@@ -41,17 +41,17 @@ func NewRouter(useCases usecases.UseCases, authMiddleware Middleware, middleware
 	r.Group(func(r chi.Router) {
 		r.Use(authMiddleware)
 		// ingredients
-		r.Get("/ingredients", handlers.GetIngredientsHandler(useCases))
-		r.Post("/ingredients", handlers.CreateIngredientHandler(useCases))
-		r.Get("/ingredients/{ingredientID}", handlers.GetIngredientHandler(useCases))
-		r.Put("/ingredients/{ingredientID}", handlers.EditIngredientHandler(useCases))
-		r.Post("/ingredients/{ingredientID}/stock", handlers.AddIngredientStockHandler(useCases))
+		r.Get("/ingredients", handlers.GetIngredientsHandler(components.Ingredients))
+		r.Post("/ingredients", handlers.CreateIngredientHandler(components.Ingredients))
+		r.Get("/ingredients/{ingredientID}", handlers.GetIngredientHandler(components.Ingredients))
+		r.Put("/ingredients/{ingredientID}", handlers.EditIngredientHandler(components.Ingredients))
+		r.Post("/ingredients/{ingredientID}/stock", handlers.AddIngredientStockHandler(components.Ingredients))
 
 		// recipes
-		r.Post("/recipes", handlers.CreateRecipeHandler(useCases))
-		r.Get("/recipes", handlers.GetRecipesHandler(useCases))
-		r.Get("/recipes/{recipeID}", handlers.GetRecipeHandler(useCases))
-		r.Post("/recipes/{recipeID}/sales", handlers.AddRecipeSalesHandler(useCases))
+		r.Post("/recipes", handlers.CreateRecipeHandler(components.Recipes))
+		r.Get("/recipes", handlers.GetRecipesHandler(components.Recipes))
+		r.Get("/recipes/{recipeID}", handlers.GetRecipeHandler(components.Recipes))
+		r.Post("/recipes/{recipeID}/sales", handlers.AddRecipeSalesHandler(components.Recipes))
 	})
 
 	return r
