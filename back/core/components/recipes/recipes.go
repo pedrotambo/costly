@@ -49,7 +49,21 @@ type CreateRecipeOptions struct {
 	Ingredients []RecipeIngredientOptions
 }
 
+func (opts CreateRecipeOptions) validate() error {
+	if opts.Name == "" {
+		return errs.ErrBadName
+	}
+
+	if len(opts.Ingredients) == 0 {
+		return errs.ErrBadIngrs
+	}
+	return nil
+}
+
 func (cr *recipeUseCases) Create(ctx context.Context, recipeOpts CreateRecipeOptions) (*model.Recipe, error) {
+	if err := recipeOpts.validate(); err != nil {
+		return &model.Recipe{}, err
+	}
 	now := cr.clock.Now()
 	recipeIngredients := []model.RecipeIngredient{}
 	for _, recipeIngredient := range recipeOpts.Ingredients {
@@ -83,16 +97,14 @@ func (cr *recipeUseCases) Create(ctx context.Context, recipeOpts CreateRecipeOpt
 	return newRecipe, nil
 }
 
-type RecipeSalesOpts struct {
-	RecipeID int64
-	Units    int
-}
-
 type RecipeSalesAdder interface {
 	AddSales(ctx context.Context, recipeID int64, soldUnits int) (*model.RecipeSales, error)
 }
 
 func (cr *recipeUseCases) AddSales(ctx context.Context, recipeID int64, soldUnits int) (*model.RecipeSales, error) {
+	if soldUnits <= 0 {
+		return &model.RecipeSales{}, errs.ErrBadStockUnits
+	}
 	now := cr.clock.Now()
 	recipeSales := &model.RecipeSales{
 		ID:        -1,

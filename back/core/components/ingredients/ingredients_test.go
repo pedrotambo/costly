@@ -105,7 +105,7 @@ func TestEditIngredient(t *testing.T) {
 		newIngredientOpts := ingredients.CreateIngredientOptions{
 			Name:  "modifiedIngr1",
 			Price: ing1.Price + 10.0,
-			Unit:  model.Kilogram,
+			Unit:  model.Gram,
 		}
 		err = ingredientComponent.Update(ctx, ing1.ID, newIngredientOpts)
 		require.NoError(t, err)

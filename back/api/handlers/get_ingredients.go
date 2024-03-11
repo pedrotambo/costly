@@ -14,7 +14,6 @@ func GetIngredientsHandler(ingredientsGetter ingredients.IngredientsFinder) http
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
-
 		RespondJSON(w, 200, ingredients)
 	}
 }

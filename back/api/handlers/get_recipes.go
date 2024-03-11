@@ -14,7 +14,6 @@ func GetRecipesHandler(recipesGetter recipes.RecipesFinder) http.HandlerFunc {
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
-
 		recipeResponses := []RecipeResponse{}
 		for _, recipe := range recipes {
 			recipeResponses = append(recipeResponses, RecipeResponse{
@@ -22,7 +21,6 @@ func GetRecipesHandler(recipesGetter recipes.RecipesFinder) http.HandlerFunc {
 				Cost:   recipe.Cost(),
 			})
 		}
-
 		RespondJSON(w, 200, recipeResponses)
 	}
 }

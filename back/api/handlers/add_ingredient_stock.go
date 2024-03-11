@@ -4,26 +4,10 @@ import (
 	"costly/core/components/ingredients"
 	"costly/core/components/logger"
 	"costly/core/errs"
+	"errors"
 	"net/http"
 	"strconv"
 )
-
-func parseIngredientStockOptions(r *http.Request) (ingredients.IngredientStockOptions, error) {
-	opts := ingredients.IngredientStockOptions{}
-	if err := UnmarshallJSONBody(r, &opts); err != nil {
-		return ingredients.IngredientStockOptions{}, ErrBadJson
-	}
-
-	if opts.Units <= 0 {
-		return ingredients.IngredientStockOptions{}, ErrBadStockUnits
-	}
-
-	if opts.Price <= 0 {
-		return ingredients.IngredientStockOptions{}, ErrBadPrice
-	}
-
-	return opts, nil
-}
 
 func AddIngredientStockHandler(ingredientStockAdder ingredients.IngredientStockAdder) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -33,15 +17,16 @@ func AddIngredientStockHandler(ingredientStockAdder ingredients.IngredientStockA
 			RespondJSON(w, http.StatusBadRequest, ErrBadID)
 			return
 		}
-
-		ingredientStockOptions, err := parseIngredientStockOptions(r)
-		if err != nil {
-			RespondJSON(w, http.StatusBadRequest, err)
+		ingredientStockOptions := ingredients.IngredientStockOptions{}
+		if err := UnmarshallJSONBody(r, &ingredientStockOptions); err != nil {
+			RespondJSON(w, http.StatusBadRequest, ErrBadJson)
 			return
 		}
-
 		ingredientStock, err := ingredientStockAdder.AddStock(r.Context(), int64(ingredientID), ingredientStockOptions)
-		if err == errs.ErrNotFound {
+		if errors.Is(err, errs.ErrBadOpts) {
+			RespondJSON(w, http.StatusBadRequest, NewInvalidInputResponseError(err.Error()))
+			return
+		} else if err == errs.ErrNotFound {
 			w.WriteHeader(http.StatusNotFound)
 			return
 		} else if err != nil {

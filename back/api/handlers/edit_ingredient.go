@@ -4,6 +4,7 @@ import (
 	"costly/core/components/ingredients"
 	"costly/core/components/logger"
 	"costly/core/errs"
+	"errors"
 	"net/http"
 	"strconv"
 )
@@ -16,15 +17,16 @@ func EditIngredientHandler(ingredientEditor ingredients.IngredientEditor) http.H
 			RespondJSON(w, http.StatusBadRequest, ErrBadID)
 			return
 		}
-
-		editIngredientOpts, err := parseIngredientOptions(r)
-		if err != nil {
-			RespondJSON(w, http.StatusBadRequest, err)
+		editIngredientOpts := ingredients.CreateIngredientOptions{}
+		if err := UnmarshallJSONBody(r, &editIngredientOpts); err != nil {
+			RespondJSON(w, http.StatusBadRequest, ErrBadJson)
 			return
 		}
-
 		err = ingredientEditor.Update(r.Context(), int64(ingredientID), editIngredientOpts)
-		if err == errs.ErrNotFound {
+		if errors.Is(err, errs.ErrBadOpts) {
+			RespondJSON(w, http.StatusBadRequest, NewInvalidInputResponseError(err.Error()))
+			return
+		} else if err == errs.ErrNotFound {
 			w.WriteHeader(http.StatusNotFound)
 			return
 		} else if err != nil {

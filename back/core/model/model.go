@@ -24,6 +24,18 @@ type Ingredient struct {
 	LastModified time.Time `json:"last_modified"`
 }
 
+func NewIngredient(name string, unit Unit, price float64, now time.Time) *Ingredient {
+	return &Ingredient{
+		ID:           -1,
+		Name:         name,
+		Unit:         unit,
+		Price:        price,
+		UnitsInStock: 0,
+		CreatedAt:    now,
+		LastModified: now,
+	}
+}
+
 type IngredientStock struct {
 	ID           int64     `json:"id"`
 	IngredientID int64     `json:"ingredient_id"`

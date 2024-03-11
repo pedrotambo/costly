@@ -15,7 +15,6 @@ func GetIngredientHandler(ingredientGetter ingredients.IngredientFinder) http.Ha
 		if err != nil {
 			RespondJSON(w, http.StatusBadRequest, ErrBadID)
 		}
-
 		ingredient, err := ingredientGetter.Find(r.Context(), ingredientID)
 		if err == errs.ErrNotFound {
 			w.WriteHeader(http.StatusNotFound)

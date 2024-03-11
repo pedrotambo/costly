@@ -4,22 +4,10 @@ import (
 	"costly/core/components/logger"
 	"costly/core/components/recipes"
 	"costly/core/errs"
+	"errors"
 	"net/http"
 	"strconv"
 )
-
-func parseRecipeSalesOptions(r *http.Request) (recipeSalesOpts, error) {
-	opts := recipeSalesOpts{}
-	if err := UnmarshallJSONBody(r, &opts); err != nil {
-		return recipeSalesOpts{}, ErrBadJson
-	}
-
-	if opts.SoldUnits <= 0 {
-		return recipeSalesOpts{}, ErrBadStockUnits
-	}
-
-	return opts, nil
-}
 
 type recipeSalesOpts struct {
 	SoldUnits int `json:"sold_units"`
@@ -33,15 +21,16 @@ func AddRecipeSalesHandler(recipeSalesAddres recipes.RecipeSalesAdder) http.Hand
 			RespondJSON(w, http.StatusBadRequest, ErrBadID)
 			return
 		}
-
-		opts, err := parseRecipeSalesOptions(r)
-		if err != nil {
-			RespondJSON(w, http.StatusBadRequest, err)
+		opts := recipeSalesOpts{}
+		if err := UnmarshallJSONBody(r, &opts); err != nil {
+			RespondJSON(w, http.StatusBadRequest, ErrBadJson)
 			return
 		}
-
 		ingredientStock, err := recipeSalesAddres.AddSales(r.Context(), recipeID, opts.SoldUnits)
-		if err == errs.ErrNotFound {
+		if errors.Is(err, errs.ErrBadOpts) {
+			RespondJSON(w, http.StatusBadRequest, NewInvalidInputResponseError(err.Error()))
+			return
+		} else if err == errs.ErrNotFound {
 			w.WriteHeader(http.StatusNotFound)
 			return
 		} else if err != nil {
@@ -49,7 +38,6 @@ func AddRecipeSalesHandler(recipeSalesAddres recipes.RecipeSalesAdder) http.Hand
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
-
 		RespondJSON(w, http.StatusCreated, ingredientStock)
 	}
 }

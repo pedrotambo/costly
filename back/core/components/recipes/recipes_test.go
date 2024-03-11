@@ -154,21 +154,43 @@ func TestCreateRecipe(t *testing.T) {
 	})
 
 	t.Run("should assign different IDs to different recipes", func(t *testing.T) {
-		db, _, ingredientComponent := createDBWithIngredients(logger, clock)
+		db, ingredients, ingredientComponent := createDBWithIngredients(logger, clock)
 
 		recipeComponent := recipes.New(db, clock, logger, ingredientComponent)
 		recipe1, err := recipeComponent.Create(context.Background(), recipes.CreateRecipeOptions{
-			Name:        "recipe1",
-			Ingredients: []recipes.RecipeIngredientOptions{},
+			Name: "recipe1",
+			Ingredients: []recipes.RecipeIngredientOptions{
+				{
+					ID:    ingredients[0].ID,
+					Units: 500,
+				},
+			},
 		})
 		require.NoError(t, err)
 		recipe2, err := recipeComponent.Create(context.Background(), recipes.CreateRecipeOptions{
-			Name:        "recipe2",
-			Ingredients: []recipes.RecipeIngredientOptions{},
+			Name: "recipe2",
+			Ingredients: []recipes.RecipeIngredientOptions{
+				{
+					ID:    ingredients[1].ID,
+					Units: 200,
+				},
+			},
 		})
 		require.NoError(t, err)
 
 		assert.NotEqual(t, recipe1.ID, recipe2.ID)
+	})
+
+	t.Run("should return error when creating a recipe without ingredients", func(t *testing.T) {
+		db, _, ingredientComponent := createDBWithIngredients(logger, clock)
+
+		recipeComponent := recipes.New(db, clock, logger, ingredientComponent)
+		_, err := recipeComponent.Create(context.Background(), recipes.CreateRecipeOptions{
+			Name:        "recipe1",
+			Ingredients: []recipes.RecipeIngredientOptions{},
+		})
+		require.Error(t, err)
+		assert.Equal(t, errs.ErrBadIngrs, err)
 	})
 }
 
@@ -177,18 +199,28 @@ func TestGetRecipe(t *testing.T) {
 	clock := clock.New()
 
 	t.Run("should get correct recipe if existent", func(t *testing.T) {
-		db, _, ingredientComponent := createDBWithIngredients(logger, clock)
+		db, ingredients, ingredientComponent := createDBWithIngredients(logger, clock)
 
 		recipeComponent := recipes.New(db, clock, logger, ingredientComponent)
 		ctx := context.Background()
 		recipe1, err := recipeComponent.Create(context.Background(), recipes.CreateRecipeOptions{
-			Name:        "recipe1",
-			Ingredients: []recipes.RecipeIngredientOptions{},
+			Name: "recipe1",
+			Ingredients: []recipes.RecipeIngredientOptions{
+				{
+					ID:    ingredients[0].ID,
+					Units: 500,
+				},
+			},
 		})
 		require.NoError(t, err)
 		_, err = recipeComponent.Create(context.Background(), recipes.CreateRecipeOptions{
-			Name:        "recipe2",
-			Ingredients: []recipes.RecipeIngredientOptions{},
+			Name: "recipe2",
+			Ingredients: []recipes.RecipeIngredientOptions{
+				{
+					ID:    ingredients[0].ID,
+					Units: 500,
+				},
+			},
 		})
 		require.NoError(t, err)
 
@@ -214,18 +246,28 @@ func TestGetRecipes(t *testing.T) {
 	clock := clock.New()
 
 	t.Run("should get correct recipes if existent", func(t *testing.T) {
-		db, _, ingredientComponent := createDBWithIngredients(logger, clock)
+		db, ingredients, ingredientComponent := createDBWithIngredients(logger, clock)
 
 		recipeComponent := recipes.New(db, clock, logger, ingredientComponent)
 		ctx := context.Background()
 		recipe1, err := recipeComponent.Create(context.Background(), recipes.CreateRecipeOptions{
-			Name:        "recipe1",
-			Ingredients: []recipes.RecipeIngredientOptions{},
+			Name: "recipe1",
+			Ingredients: []recipes.RecipeIngredientOptions{
+				{
+					ID:    ingredients[0].ID,
+					Units: 500,
+				},
+			},
 		})
 		require.NoError(t, err)
 		recipe2, err := recipeComponent.Create(context.Background(), recipes.CreateRecipeOptions{
-			Name:        "recipe2",
-			Ingredients: []recipes.RecipeIngredientOptions{},
+			Name: "recipe2",
+			Ingredients: []recipes.RecipeIngredientOptions{
+				{
+					ID:    ingredients[0].ID,
+					Units: 500,
+				},
+			},
 		})
 		require.NoError(t, err)
 

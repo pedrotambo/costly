@@ -21,7 +21,6 @@ func GetRecipeHandler(recipeGetter recipes.RecipeFinder) http.HandlerFunc {
 		if err != nil {
 			RespondJSON(w, http.StatusBadRequest, ErrBadID)
 		}
-
 		recipe, err := recipeGetter.Find(r.Context(), recipeID)
 		if err == errs.ErrNotFound {
 			w.WriteHeader(http.StatusNotFound)
@@ -31,7 +30,6 @@ func GetRecipeHandler(recipeGetter recipes.RecipeFinder) http.HandlerFunc {
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
-
 		RespondJSON(w, 200, RecipeResponse{
 			Recipe: recipe,
 			Cost:   recipe.Cost(),

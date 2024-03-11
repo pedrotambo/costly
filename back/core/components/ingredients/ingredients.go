@@ -6,6 +6,7 @@ import (
 	"costly/core/components/database"
 	"costly/core/components/ingredients/internal/rpst"
 	"costly/core/components/logger"
+	"costly/core/errs"
 	"costly/core/model"
 )
 
@@ -40,18 +41,27 @@ type CreateIngredientOptions struct {
 	Unit  model.Unit
 }
 
-func (ic *ingredientComponent) Create(ctx context.Context, ingredientOpts CreateIngredientOptions) (*model.Ingredient, error) {
-	now := ic.clock.Now()
-	newIngredient := &model.Ingredient{
-		ID:           -1,
-		Name:         ingredientOpts.Name,
-		Unit:         ingredientOpts.Unit,
-		Price:        ingredientOpts.Price,
-		UnitsInStock: 0,
-		CreatedAt:    now,
-		LastModified: now,
+func (opts CreateIngredientOptions) validate() error {
+	if opts.Name == "" {
+		return errs.ErrBadName
 	}
 
+	if opts.Unit != "gr" {
+		return errs.ErrBadUnit
+	}
+
+	if opts.Price <= 0 {
+		return errs.ErrBadPrice
+	}
+	return nil
+}
+
+func (ic *ingredientComponent) Create(ctx context.Context, ingredientOpts CreateIngredientOptions) (*model.Ingredient, error) {
+	if err := ingredientOpts.validate(); err != nil {
+		return &model.Ingredient{}, err
+	}
+	now := ic.clock.Now()
+	newIngredient := model.NewIngredient(ingredientOpts.Name, ingredientOpts.Unit, ingredientOpts.Price, now)
 	err := ic.repository.Add(ctx, newIngredient)
 
 	if err != nil {
@@ -66,6 +76,9 @@ type IngredientEditor interface {
 }
 
 func (ic *ingredientComponent) Update(ctx context.Context, ingredientID int64, ingredientOpts CreateIngredientOptions) error {
+	if err := ingredientOpts.validate(); err != nil {
+		return err
+	}
 	err := ic.repository.Update(ctx, ingredientID, func(ingredient *model.Ingredient) error {
 		ingredient.Name = ingredientOpts.Name
 		ingredient.Price = ingredientOpts.Price
@@ -81,11 +94,25 @@ type IngredientStockOptions struct {
 	Price float64
 }
 
+func (opts IngredientStockOptions) validate() error {
+	if opts.Units <= 0 {
+		return errs.ErrBadStockUnits
+	}
+
+	if opts.Price <= 0 {
+		return errs.ErrBadPrice
+	}
+	return nil
+}
+
 type IngredientStockAdder interface {
 	AddStock(ctx context.Context, ingredientID int64, ingredientStockOpts IngredientStockOptions) (*model.IngredientStock, error)
 }
 
 func (ic *ingredientComponent) AddStock(ctx context.Context, ingredientID int64, ingredientStockOpts IngredientStockOptions) (*model.IngredientStock, error) {
+	if err := ingredientStockOpts.validate(); err != nil {
+		return &model.IngredientStock{}, err
+	}
 	ingredientStock := &model.IngredientStock{
 		ID:           -1,
 		IngredientID: ingredientID,
