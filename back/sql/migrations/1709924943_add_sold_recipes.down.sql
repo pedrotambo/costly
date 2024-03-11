@@ -1,0 +1,1 @@
+DROP TABLE IF EXISTS sold_recipes_history;

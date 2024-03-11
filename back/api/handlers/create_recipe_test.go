@@ -4,11 +4,12 @@ import (
 	"bytes"
 	"context"
 	"costly/api/handlers"
-	"costly/core/domain"
+	"costly/core/model"
 	"costly/core/ports/clock"
 	"costly/core/ports/database"
 	"costly/core/ports/logger"
-	"costly/core/ports/repository"
+	"costly/core/ports/rpst"
+	"costly/core/usecases"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -20,22 +21,25 @@ import (
 )
 
 func runCreateRecipeHandler(t *testing.T, clock clock.Clock, reqBody io.Reader) *httptest.ResponseRecorder {
-	logger, _ := logger.NewLogger("debug")
+	logger, _ := logger.New("debug")
 	db, _ := database.NewFromDatasource(":memory:", logger)
-	ingredientRepository := repository.NewIngredientRepository(db, clock, logger)
-	ingredientRepository.CreateIngredient(context.Background(), repository.CreateIngredientOptions{
+	useCases := usecases.New(&usecases.Ports{
+		Logger:     logger,
+		Repository: rpst.New(db, clock, logger),
+		Clock:      clock,
+	})
+	useCases.CreateIngredient(context.Background(), usecases.CreateIngredientOptions{
 		Name:  "ingr1",
 		Price: 1.50,
-		Unit:  domain.Gram,
+		Unit:  model.Gram,
 	})
-	ingredientRepository.CreateIngredient(context.Background(), repository.CreateIngredientOptions{
+	useCases.CreateIngredient(context.Background(), usecases.CreateIngredientOptions{
 		Name:  "ingr2",
 		Price: 2.50,
-		Unit:  domain.Gram,
+		Unit:  model.Gram,
 	})
 
-	repo := repository.NewRecipeRepository(db, clock, logger)
-	handler := handlers.CreateRecipeHandler(repo)
+	handler := handlers.CreateRecipeHandler(useCases)
 
 	req, err := http.NewRequest("POST", "/recipes", reqBody)
 	if err != nil {
@@ -85,6 +89,7 @@ func TestHandleCreateRecipe(t *testing.T) {
 							"name": "ingr1",
 							"unit": "gr",
 							"price": 1.50,
+							"units_in_stock":0,
 							"created_at": "1970-01-01T00:00:12.345Z",
 							"last_modified": "1970-01-01T00:00:12.345Z"
 						},
@@ -96,6 +101,7 @@ func TestHandleCreateRecipe(t *testing.T) {
 							"name": "ingr2",
 							"unit": "gr",
 							"price": 2.50,
+							"units_in_stock":0,
 							"created_at": "1970-01-01T00:00:12.345Z",
 							"last_modified": "1970-01-01T00:00:12.345Z"
 						},

@@ -2,32 +2,32 @@ package handlers
 
 import (
 	"costly/core/ports/logger"
-	"costly/core/ports/repository"
+	"costly/core/usecases"
 	"net/http"
 )
 
-func parseIngredientOptions(r *http.Request) (repository.CreateIngredientOptions, error) {
-	createIngredientOpts := repository.CreateIngredientOptions{}
+func parseIngredientOptions(r *http.Request) (usecases.CreateIngredientOptions, error) {
+	createIngredientOpts := usecases.CreateIngredientOptions{}
 	if err := UnmarshallJSONBody(r, &createIngredientOpts); err != nil {
-		return repository.CreateIngredientOptions{}, ErrBadJson
+		return usecases.CreateIngredientOptions{}, ErrBadJson
 	}
 
 	if createIngredientOpts.Name == "" {
-		return repository.CreateIngredientOptions{}, ErrBadName
+		return usecases.CreateIngredientOptions{}, ErrBadName
 	}
 
 	if createIngredientOpts.Unit != "gr" {
-		return repository.CreateIngredientOptions{}, ErrBadUnit
+		return usecases.CreateIngredientOptions{}, ErrBadUnit
 	}
 
 	if createIngredientOpts.Price <= 0 {
-		return repository.CreateIngredientOptions{}, ErrBadPrice
+		return usecases.CreateIngredientOptions{}, ErrBadPrice
 	}
 
 	return createIngredientOpts, nil
 }
 
-func CreateIngredientHandler(ingredientRepository repository.IngredientRepository) http.HandlerFunc {
+func CreateIngredientHandler(ingredientCreator usecases.IngredientCreator) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		defer r.Body.Close()
 
@@ -37,7 +37,7 @@ func CreateIngredientHandler(ingredientRepository repository.IngredientRepositor
 			return
 		}
 
-		ingredient, err := ingredientRepository.CreateIngredient(r.Context(), createIngredientOpts)
+		ingredient, err := ingredientCreator.CreateIngredient(r.Context(), createIngredientOpts)
 		if err != nil {
 			logger.Error(r.Context(), err, "error getting ingredient")
 			w.WriteHeader(http.StatusInternalServerError)

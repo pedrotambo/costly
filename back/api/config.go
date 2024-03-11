@@ -1,4 +1,4 @@
-package main
+package api
 
 import (
 	"flag"
@@ -15,28 +15,16 @@ type Config struct {
 }
 
 func LoadConfig() (*Config, error) {
-	var cfg Config
-
-	cfg.registerFlags(flag.CommandLine)
-	flag.Parse()
-
-	if err := cfg.Validate(); err != nil {
-		return nil, err
-	}
-
-	return &cfg, nil
-}
-
-func (cfg *Config) registerFlags(fs *flag.FlagSet) {
+	cfg := Config{}
+	fs := flag.CommandLine
 	fs.StringVar(&cfg.LogLevel, "log.level", "info", "Log level.")
 	fs.StringVar(&cfg.ListenAddress, "listen-addr", ":3000", "Main listen address for the HTTP server.")
 	fs.StringVar(&cfg.Database.ConnectionString, "db.connection-string", "", "SQLite connection string.")
 	fs.StringVar(&cfg.AuthSecret, "auth-secret", "sample-secret", "Authentication secret for signing JWTs.")
-}
-
-func (cfg *Config) Validate() error {
+	flag.Parse()
 	if cfg.Database.ConnectionString == "" {
-		return fmt.Errorf("empty DB connection string")
+		return &Config{}, fmt.Errorf("empty DB connection string")
 	}
-	return nil
+	fmt.Println(cfg)
+	return &cfg, nil
 }

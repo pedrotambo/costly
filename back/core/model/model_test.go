@@ -1,9 +1,9 @@
-package domain_test
+package model_test
 
 import (
-	"costly/core/domain"
+	"costly/core/model"
+	"costly/core/ports/clock"
 	"testing"
-	"time"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -11,28 +11,31 @@ import (
 func TestRecipeCost(t *testing.T) {
 
 	t.Run("cost of a recipe is the sum of its ingredients and units of them", func(t *testing.T) {
-		now := time.Now()
-		recipe := domain.Recipe{
+		clock := clock.New()
+		now := clock.Now()
+		recipe := model.Recipe{
 			ID:   1,
 			Name: "aName",
-			Ingredients: []domain.RecipeIngredient{
+			Ingredients: []model.RecipeIngredient{
 				{
-					Ingredient: domain.Ingredient{
+					Ingredient: model.Ingredient{
 						1,
 						"meat",
-						domain.Gram,
+						model.Gram,
 						1.0,
+						0,
 						now,
 						now,
 					},
 					Units: 500,
 				},
 				{
-					Ingredient: domain.Ingredient{
+					Ingredient: model.Ingredient{
 						1,
 						"salt",
-						domain.Gram,
+						model.Gram,
 						10.0,
+						0,
 						now,
 						now,
 					},

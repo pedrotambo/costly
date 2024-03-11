@@ -3,11 +3,12 @@ package handlers_test
 import (
 	"context"
 	"costly/api/handlers"
-	"costly/core/domain"
+	"costly/core/model"
 	"costly/core/ports/clock"
 	"costly/core/ports/database"
 	"costly/core/ports/logger"
-	"costly/core/ports/repository"
+	"costly/core/ports/rpst"
+	"costly/core/usecases"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -17,12 +18,13 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func runGetIngredientsHandler(t *testing.T, clock clock.Clock, ingrOpts []repository.CreateIngredientOptions) *httptest.ResponseRecorder {
-	logger, _ := logger.NewLogger("debug")
+func runGetIngredientsHandler(t *testing.T, clock clock.Clock, ingrOpts []usecases.CreateIngredientOptions) *httptest.ResponseRecorder {
+	logger, _ := logger.New("debug")
 	db, _ := database.NewFromDatasource(":memory:", logger)
-	repo := repository.NewIngredientRepository(db, clock, logger)
+	repo := rpst.NewIngredientRepository(db, clock, logger)
+	ingredientUsecases := usecases.NewIngredientUseCases(repo, clock)
 	for _, opts := range ingrOpts {
-		repo.CreateIngredient(context.Background(), opts)
+		ingredientUsecases.CreateIngredient(context.Background(), opts)
 	}
 
 	handler := handlers.GetIngredientsHandler(repo)
@@ -46,22 +48,22 @@ func TestHandleGetIngredients(t *testing.T) {
 
 	testCases := []struct {
 		name        string
-		ingredients []repository.CreateIngredientOptions
+		ingredients []usecases.CreateIngredientOptions
 		expected    string
 		statusCode  int
 	}{
 		{
 			name: "should get ingredients",
-			ingredients: []repository.CreateIngredientOptions{
+			ingredients: []usecases.CreateIngredientOptions{
 				{
 					Name:  "ingr1",
 					Price: 1.5,
-					Unit:  domain.Gram,
+					Unit:  model.Gram,
 				},
 				{
 					Name:  "ingr2",
 					Price: 2.5,
-					Unit:  domain.Gram,
+					Unit:  model.Gram,
 				},
 			},
 			expected: `[
@@ -70,6 +72,7 @@ func TestHandleGetIngredients(t *testing.T) {
 					"name": "ingr1",
 					"unit": "gr",
 					"price": 1.5,
+					"units_in_stock":0,
 					"created_at": "1970-01-01T00:00:12.345Z",
 					"last_modified": "1970-01-01T00:00:12.345Z"
 				},
@@ -78,6 +81,7 @@ func TestHandleGetIngredients(t *testing.T) {
 					"name": "ingr2",
 					"unit": "gr",
 					"price": 2.5,
+					"units_in_stock":0,
 					"created_at": "1970-01-01T00:00:12.345Z",
 					"last_modified": "1970-01-01T00:00:12.345Z"
 				}
@@ -86,7 +90,7 @@ func TestHandleGetIngredients(t *testing.T) {
 		},
 		{
 			name:        "should get empty ingredients",
-			ingredients: []repository.CreateIngredientOptions{},
+			ingredients: []usecases.CreateIngredientOptions{},
 			expected:    `[]`,
 			statusCode:  http.StatusOK,
 		},

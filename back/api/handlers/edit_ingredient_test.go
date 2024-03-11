@@ -4,11 +4,12 @@ import (
 	"bytes"
 	"context"
 	"costly/api/handlers"
-	"costly/core/domain"
+	"costly/core/model"
 	"costly/core/ports/clock"
 	"costly/core/ports/database"
 	"costly/core/ports/logger"
-	"costly/core/ports/repository"
+	"costly/core/ports/rpst"
+	"costly/core/usecases"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -20,15 +21,17 @@ import (
 )
 
 func runEditIngredientHandler(t *testing.T, clock clock.Clock, ingredientIDstr string, reqBody io.Reader) *httptest.ResponseRecorder {
-	logger, _ := logger.NewLogger("debug")
+	logger, _ := logger.New("debug")
 	db, _ := database.NewFromDatasource(":memory:", logger)
-	repo := repository.NewIngredientRepository(db, clock, logger)
-	repo.CreateIngredient(context.Background(), repository.CreateIngredientOptions{
+	repo := rpst.NewIngredientRepository(db, clock, logger)
+	ingredientUsecases := usecases.NewIngredientUseCases(repo, clock)
+	ingredientUsecases.CreateIngredient(context.Background(), usecases.CreateIngredientOptions{
 		Name:  "ingredientName",
 		Price: 12.43,
-		Unit:  domain.Gram,
+		Unit:  model.Gram,
 	})
-	handler := handlers.EditIngredientHandler(repo)
+
+	handler := handlers.EditIngredientHandler(ingredientUsecases)
 
 	req, err := http.NewRequest("PUT", "/ingredients/"+ingredientIDstr, reqBody)
 	if err != nil {

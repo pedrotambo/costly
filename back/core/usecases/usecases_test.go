@@ -1,4 +1,4 @@
-package repository_test
+package usecases_test
 
 import (
 	"fmt"
