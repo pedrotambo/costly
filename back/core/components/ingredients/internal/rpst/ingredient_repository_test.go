@@ -2,12 +2,12 @@ package rpst_test
 
 import (
 	"context"
-	"costly/core/components/clock"
-	"costly/core/components/database"
 	"costly/core/components/ingredients/internal/rpst"
-	"costly/core/components/logger"
 	"costly/core/errs"
 	"costly/core/model"
+	"costly/core/ports/clock"
+	"costly/core/ports/database"
+	"costly/core/ports/logger"
 	"database/sql"
 	"errors"
 	"testing"

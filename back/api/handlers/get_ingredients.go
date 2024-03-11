@@ -2,7 +2,7 @@ package handlers
 
 import (
 	"costly/core/components/ingredients"
-	"costly/core/components/logger"
+	"costly/core/ports/logger"
 	"net/http"
 )
 

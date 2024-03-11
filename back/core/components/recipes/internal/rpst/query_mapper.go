@@ -2,8 +2,8 @@ package rpst
 
 import (
 	"context"
-	"costly/core/components/database"
 	"costly/core/model"
+	"costly/core/ports/database"
 )
 
 type rowMapper[T any] func(rowScanner database.RowScanner) (T, error)

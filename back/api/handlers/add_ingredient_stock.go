@@ -2,8 +2,8 @@ package handlers
 
 import (
 	"costly/core/components/ingredients"
-	"costly/core/components/logger"
 	"costly/core/errs"
+	"costly/core/ports/logger"
 	"errors"
 	"net/http"
 	"strconv"

@@ -2,14 +2,14 @@ package recipes_test
 
 import (
 	"context"
-	"costly/core/components/clock"
-	"costly/core/components/database"
 	"costly/core/components/ingredients"
-	"costly/core/components/logger"
 	"costly/core/components/recipes"
 	"costly/core/errs"
 	"costly/core/mocks"
 	"costly/core/model"
+	"costly/core/ports/clock"
+	"costly/core/ports/database"
+	"costly/core/ports/logger"
 	"testing"
 	"time"
 

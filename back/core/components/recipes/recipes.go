@@ -2,13 +2,13 @@ package recipes
 
 import (
 	"context"
-	"costly/core/components/clock"
-	"costly/core/components/database"
 	"costly/core/components/ingredients"
-	"costly/core/components/logger"
 	"costly/core/components/recipes/internal/rpst"
 	"costly/core/errs"
 	"costly/core/model"
+	"costly/core/ports/clock"
+	"costly/core/ports/database"
+	"costly/core/ports/logger"
 	"fmt"
 )
 

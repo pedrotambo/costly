@@ -3,7 +3,7 @@ package api
 import (
 	"context"
 	comps "costly/core/components"
-	"costly/core/components/logger"
+	"costly/core/ports/logger"
 	"fmt"
 	"net/http"
 	"os"
@@ -20,19 +20,13 @@ type server struct {
 	logger     logger.Logger
 }
 
-func NewServer(config *Config) Server {
-	components, err := comps.InitComponents(&config.ComponentsConfig)
-	logger := components.Logger
-	if err != nil {
-		fmt.Printf("Could not initialize components. Err: %s\n", err)
-		os.Exit(1)
-	}
+func NewServer(listenAddress string, authSecret string, components *comps.Components, logger logger.Logger) Server {
 	loggerMiddleware := NewLoggerMiddleware(logger)
-	authMiddleware := NewAuthMiddleware([]byte(config.AuthSecret), logger)
+	authMiddleware := NewAuthMiddleware([]byte(authSecret), logger)
 	router := NewRouter(components, authMiddleware, loggerMiddleware)
 	return &server{
 		httpServer: &http.Server{
-			Addr:    config.ListenAddress,
+			Addr:    listenAddress,
 			Handler: router,
 		},
 		logger: logger,

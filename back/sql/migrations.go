@@ -1,7 +1,7 @@
 package sql
 
 import (
-	"costly/core/components/logger"
+	"costly/core/ports/logger"
 	"database/sql"
 	"embed"
 	"errors"

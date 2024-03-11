@@ -2,10 +2,10 @@ package rpst
 
 import (
 	"context"
-	"costly/core/components/database"
-	"costly/core/components/logger"
 	"costly/core/errs"
 	"costly/core/model"
+	"costly/core/ports/database"
+	"costly/core/ports/logger"
 	"database/sql"
 )
 

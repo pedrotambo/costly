@@ -1,7 +1,7 @@
 package api
 
 import (
-	"costly/core/components/logger"
+	"costly/core/ports/logger"
 	"net/http"
 )
 
