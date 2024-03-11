@@ -28,7 +28,7 @@ func New(db database.Database, logger logger.Logger) IngredientRepository {
 }
 
 func (r *ingredientRepository) Find(ctx context.Context, id int64) (model.Ingredient, error) {
-	ingredient, err := queryRowAndMap(ctx, r.db, mapToIngredient, "SELECT * FROM ingredient WHERE id = ?", id)
+	ingredient, err := database.QueryRowAndMap(ctx, r.db, mapToIngredient, "SELECT * FROM ingredient WHERE id = ?", id)
 	if err == sql.ErrNoRows {
 		return model.Ingredient{}, errs.ErrNotFound
 	} else if err != nil {
@@ -38,7 +38,7 @@ func (r *ingredientRepository) Find(ctx context.Context, id int64) (model.Ingred
 }
 
 func (r *ingredientRepository) FindAll(ctx context.Context) ([]model.Ingredient, error) {
-	ingredients, err := queryAndMap(ctx, r.db, mapToIngredient, "SELECT * FROM ingredient")
+	ingredients, err := database.QueryAndMap(ctx, r.db, mapToIngredient, "SELECT * FROM ingredient")
 	if err != nil {
 		return nil, err
 	}
@@ -68,7 +68,7 @@ func (r *ingredientRepository) Update(ctx context.Context, ingredientID int64, u
 		return err
 	}
 	updateFunc(&ingredient)
-	_, err = queryRowAndMap(ctx, r.db, mapToIngredient, "UPDATE ingredient SET name = ?, unit = ?, price = ?, last_modified = ? WHERE id = ? RETURNING *", ingredient.Name, ingredient.Unit, ingredient.Price, ingredient.LastModified, ingredient.ID)
+	_, err = database.QueryRowAndMap(ctx, r.db, mapToIngredient, "UPDATE ingredient SET name = ?, unit = ?, price = ?, last_modified = ? WHERE id = ? RETURNING *", ingredient.Name, ingredient.Unit, ingredient.Price, ingredient.LastModified, ingredient.ID)
 	if err == sql.ErrNoRows {
 		return errs.ErrNotFound
 	} else if err != nil {
@@ -114,9 +114,21 @@ func (r *ingredientRepository) AddStock(ctx context.Context, ingredientStock *mo
 }
 
 func (r *ingredientRepository) FindStockHistory(ctx context.Context, ingredientID int64) ([]model.IngredientStock, error) {
-	ingredients, err := queryAndMap(ctx, r.db, mapToIngredientStock, "SELECT * FROM stock_history")
+	ingredients, err := database.QueryAndMap(ctx, r.db, mapToIngredientStock, "SELECT * FROM stock_history")
 	if err != nil {
 		return nil, err
 	}
 	return ingredients, nil
+}
+
+func mapToIngredient(rowScanner database.RowScanner) (model.Ingredient, error) {
+	var ingredient model.Ingredient
+	err := rowScanner.Scan(&ingredient.ID, &ingredient.Name, &ingredient.Unit, &ingredient.Price, &ingredient.CreatedAt, &ingredient.LastModified, &ingredient.UnitsInStock)
+	return ingredient, err
+}
+
+func mapToIngredientStock(rowScanner database.RowScanner) (model.IngredientStock, error) {
+	var stock model.IngredientStock
+	err := rowScanner.Scan(&stock.ID, &stock.IngredientID, &stock.Units, &stock.Price, &stock.CreatedAt)
+	return stock, err
 }

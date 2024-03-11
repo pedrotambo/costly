@@ -38,13 +38,13 @@ func (r *recipeRepository) Find(ctx context.Context, id int64) (model.Recipe, er
 }
 
 func findRecipe(ctx context.Context, tx database.TX, id int64) (model.Recipe, error) {
-	recipeDB, err := queryRowAndMap(ctx, tx, mapToRecipeDB, "SELECT * FROM recipe WHERE id = ?", id)
+	recipeDB, err := database.QueryRowAndMap(ctx, tx, mapToRecipeDB, "SELECT * FROM recipe WHERE id = ?", id)
 	if err == sql.ErrNoRows {
 		return model.Recipe{}, errs.ErrNotFound
 	} else if err != nil {
 		return model.Recipe{}, err
 	}
-	recipeIngredients, err := queryAndMap(ctx, tx, mapToRecipeIngredient, "SELECT i.*, ri.units FROM ingredient i JOIN recipe_ingredient ri ON i.id = ri.ingredient_id AND ri.recipe_id = ?", id)
+	recipeIngredients, err := database.QueryAndMap(ctx, tx, mapToRecipeIngredient, "SELECT i.*, ri.units FROM ingredient i JOIN recipe_ingredient ri ON i.id = ri.ingredient_id AND ri.recipe_id = ?", id)
 	if err != nil {
 		return model.Recipe{}, err
 	}
@@ -58,13 +58,13 @@ func findRecipe(ctx context.Context, tx database.TX, id int64) (model.Recipe, er
 }
 
 func (r *recipeRepository) FindAll(ctx context.Context) ([]model.Recipe, error) {
-	recipesDB, err := queryAndMap(ctx, r.db, mapToRecipeDB, "SELECT * FROM recipe")
+	recipesDB, err := database.QueryAndMap(ctx, r.db, mapToRecipeDB, "SELECT * FROM recipe")
 	if err != nil {
 		return nil, err
 	}
 	recipes := []model.Recipe{}
 	for _, recipeDB := range recipesDB {
-		recipeIngredients, err := queryAndMap(ctx, r.db, mapToRecipeIngredient, "SELECT i.*, ri.units FROM ingredient i JOIN recipe_ingredient ri ON i.id = ri.ingredient_id AND ri.recipe_id = ?", recipeDB.id)
+		recipeIngredients, err := database.QueryAndMap(ctx, r.db, mapToRecipeIngredient, "SELECT i.*, ri.units FROM ingredient i JOIN recipe_ingredient ri ON i.id = ri.ingredient_id AND ri.recipe_id = ?", recipeDB.id)
 		if err != nil {
 			return nil, err
 		}
@@ -140,4 +140,20 @@ func (r *recipeRepository) AddSales(ctx context.Context, recipeSales *model.Reci
 		recipeSales.ID = recipeSalesID
 		return nil
 	})
+}
+
+func mapToRecipeIngredient(rowScanner database.RowScanner) (model.RecipeIngredient, error) {
+	var ingredient model.Ingredient
+	var recipeUnits int
+	err := rowScanner.Scan(&ingredient.ID, &ingredient.Name, &ingredient.Unit, &ingredient.Price, &ingredient.CreatedAt, &ingredient.LastModified, &ingredient.UnitsInStock, &recipeUnits)
+	return model.RecipeIngredient{
+		Ingredient: ingredient,
+		Units:      recipeUnits,
+	}, err
+}
+
+func mapToRecipeDB(rowScanner database.RowScanner) (recipeDB, error) {
+	var recipe recipeDB
+	err := rowScanner.Scan(&recipe.id, &recipe.name, &recipe.createdAt, &recipe.lastModified)
+	return recipe, err
 }
