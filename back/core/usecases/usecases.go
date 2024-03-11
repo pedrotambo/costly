@@ -18,7 +18,6 @@ type UseCases interface {
 	RecipeUseCases
 	rpst.IngredientGetter
 	rpst.IngredientsGetter
-	rpst.IngredientStockUpdater
 	rpst.RecipeGetter
 	rpst.RecipesGetter
 }

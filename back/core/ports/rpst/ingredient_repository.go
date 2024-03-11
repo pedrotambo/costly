@@ -17,16 +17,13 @@ type IngredientsGetter interface {
 	GetIngredients(ctx context.Context) ([]model.Ingredient, error)
 }
 
-type IngredientStockUpdater interface {
-	UpdateStock(ctx context.Context, ingredientID int64, newStockOptions NewStockOptions) (model.Ingredient, error)
-}
-
 type IngredientRepository interface {
 	SaveIngredient(ctx context.Context, ingredient *model.Ingredient) error
 	UpdateIngredient(ctx context.Context, ingredient *model.Ingredient) error
 	IngredientGetter
 	IngredientsGetter
-	IngredientStockUpdater
+	SaveIngredientStock(ctx context.Context, ingredientStock *model.IngredientStock) error
+	GetIngredientStockHistory(ctx context.Context, ingredientID int64) ([]model.IngredientStock, error)
 }
 
 type NewStockOptions struct {
@@ -115,17 +112,27 @@ func (r *ingredientRepository) UpdateStock(ctx context.Context, ingredientID int
 	return ingredient, nil
 }
 
-func (r *ingredientRepository) AddIngredientStock(ctx context.Context, ingredientStock *model.IngredientStock) error {
+func (r *ingredientRepository) SaveIngredientStock(ctx context.Context, ingredientStock *model.IngredientStock) error {
 	return r.db.WithTx(ctx, func(tx database.TX) error {
-		_, err := tx.ExecContext(ctx, "UPDATE ingredient SET units_in_stock = units_in_stock + ?, price = ?, last_modified = ? WHERE id = ?", ingredientStock.Units, ingredientStock.Price, ingredientStock.CreatedAt, ingredientStock.IngredientID)
+		res, err := tx.ExecContext(ctx, "UPDATE ingredient SET units_in_stock = units_in_stock + ?, price = ?, last_modified = ? WHERE id = ?", ingredientStock.Units, ingredientStock.Price, ingredientStock.CreatedAt, ingredientStock.IngredientID)
+
 		if err != nil {
-			r.logger.Error(err, "error updating ingredient")
+			r.logger.Error(err, "error updating ingredient stock")
 			return err
 		}
 
-		result, err := tx.ExecContext(ctx, "INSERT INTO stock_history (ingredient_id, units, price, created_at) VALUES (?, ?, ?, ?)", ingredientStock.ID, ingredientStock.Units, ingredientStock.Price, ingredientStock.CreatedAt)
+		if rows, err := res.RowsAffected(); err != nil {
+			r.logger.Error(err, "error updating ingredient stock: "+err.Error())
+			return err
+		} else if rows == 0 {
+			r.logger.Error(err, "error updating ingredient stock: inexisten ingredient")
+			return ErrNotFound
+		}
+
+		result, err := tx.ExecContext(ctx, "INSERT INTO stock_history (ingredient_id, units, price, created_at) VALUES (?, ?, ?, ?)", ingredientStock.IngredientID, ingredientStock.Units, ingredientStock.Price, ingredientStock.CreatedAt)
 
 		if err != nil {
+			r.logger.Error(err, "error saving ingredient stock")
 			return err
 		}
 
@@ -138,4 +145,12 @@ func (r *ingredientRepository) AddIngredientStock(ctx context.Context, ingredien
 		ingredientStock.ID = ingredientStockID
 		return nil
 	})
+}
+
+func (r *ingredientRepository) GetIngredientStockHistory(ctx context.Context, ingredientID int64) ([]model.IngredientStock, error) {
+	ingredients, err := queryAndMap(ctx, r.db, mapToIngredientStock, "SELECT * FROM stock_history")
+	if err != nil {
+		return nil, err
+	}
+	return ingredients, nil
 }

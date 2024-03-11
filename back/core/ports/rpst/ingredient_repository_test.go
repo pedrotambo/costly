@@ -7,7 +7,6 @@ import (
 	"costly/core/ports/database"
 	"costly/core/ports/logger"
 	"costly/core/ports/rpst"
-	"costly/core/usecases"
 	"database/sql"
 	"errors"
 	"testing"
@@ -26,25 +25,36 @@ func TestGetIngredient(t *testing.T) {
 		db, _ := database.NewFromDatasource(":memory:", logger)
 
 		ingredientRepository := rpst.NewIngredientRepository(db, clock, logger)
-		ingredientUsecases := usecases.NewIngredientUseCases(ingredientRepository, clock)
 		ctx := context.Background()
-		ing1, err := ingredientUsecases.CreateIngredient(context.Background(), usecases.CreateIngredientOptions{
-			Name:  "ing1",
-			Price: 10.0,
-			Unit:  model.Gram,
-		})
-		require.NoError(t, err)
-		_, err = ingredientUsecases.CreateIngredient(context.Background(), usecases.CreateIngredientOptions{
-			Name:  "ing2",
-			Price: 1123123123120.0,
-			Unit:  model.Gram,
-		})
-		require.NoError(t, err)
-
-		ingr1Get, err := ingredientRepository.GetIngredient(ctx, ing1.ID)
+		now := clock.Now()
+		ingredient := &model.Ingredient{
+			ID:           1,
+			Name:         "aName",
+			Unit:         model.Gram,
+			Price:        1.0,
+			UnitsInStock: 0,
+			CreatedAt:    now,
+			LastModified: now,
+		}
+		err := ingredientRepository.SaveIngredient(ctx, ingredient)
 		require.NoError(t, err)
 
-		assert.Equal(t, ing1, &ingr1Get)
+		ingredient2 := &model.Ingredient{
+			ID:           1,
+			Name:         "ing2",
+			Unit:         model.Gram,
+			Price:        1123123123120.0,
+			UnitsInStock: 0,
+			CreatedAt:    now,
+			LastModified: now,
+		}
+		err = ingredientRepository.SaveIngredient(ctx, ingredient2)
+		require.NoError(t, err)
+
+		ingr1Get, err := ingredientRepository.GetIngredient(ctx, ingredient.ID)
+		require.NoError(t, err)
+
+		assert.Equal(t, ingredient, &ingr1Get)
 	})
 
 	t.Run("should return error when requesting an inexistent ingredient", func(t *testing.T) {
@@ -67,104 +77,169 @@ func TestGetIngredients(t *testing.T) {
 		db, _ := database.NewFromDatasource(":memory:", logger)
 
 		ingredientRepository := rpst.NewIngredientRepository(db, clock, logger)
-		ingredientUsecases := usecases.NewIngredientUseCases(ingredientRepository, clock)
 		ctx := context.Background()
-		ing1, err := ingredientUsecases.CreateIngredient(context.Background(), usecases.CreateIngredientOptions{
-			Name:  "ing1",
-			Price: 10.0,
-			Unit:  model.Gram,
-		})
+		now := clock.Now()
+		ingredient := &model.Ingredient{
+			ID:           1,
+			Name:         "aName",
+			Unit:         model.Gram,
+			Price:        1.0,
+			UnitsInStock: 0,
+			CreatedAt:    now,
+			LastModified: now,
+		}
+		err := ingredientRepository.SaveIngredient(ctx, ingredient)
 		require.NoError(t, err)
-		ing2, err := ingredientUsecases.CreateIngredient(context.Background(), usecases.CreateIngredientOptions{
-			Name:  "ing2",
-			Price: 1123123123120.0,
-			Unit:  model.Gram,
-		})
+
+		ingredient2 := &model.Ingredient{
+			ID:           1,
+			Name:         "ing2",
+			Unit:         model.Gram,
+			Price:        1123123123120.0,
+			UnitsInStock: 0,
+			CreatedAt:    now,
+			LastModified: now,
+		}
+		err = ingredientRepository.SaveIngredient(ctx, ingredient2)
 		require.NoError(t, err)
 
 		ingredients, err := ingredientRepository.GetIngredients(ctx)
 		require.NoError(t, err)
 
-		assert.Equal(t, ing1, &ingredients[0])
-		assert.Equal(t, ing2, &ingredients[1])
+		assert.Equal(t, ingredient, &ingredients[0])
+		assert.Equal(t, ingredient2, &ingredients[1])
 	})
 }
 
-func TestUpdateStock(t *testing.T) {
+func TestAddIngredientStock(t *testing.T) {
 	logger, _ := logger.New("debug")
 	clock := clock.New()
 
-	t.Run("should update ingredient units in stock correctly", func(t *testing.T) {
+	t.Run("should add ingredient units in stock correctly", func(t *testing.T) {
 		db, _ := database.NewFromDatasource(":memory:", logger)
 
 		ingredientRepository := rpst.NewIngredientRepository(db, clock, logger)
-		ingredientUsecases := usecases.NewIngredientUseCases(ingredientRepository, clock)
 		ctx := context.Background()
-		ing1, err := ingredientUsecases.CreateIngredient(ctx, usecases.CreateIngredientOptions{
-			Name:  "ing1",
-			Price: 10.0,
-			Unit:  model.Gram,
+		now := clock.Now()
+		ingredient := &model.Ingredient{
+			ID:           1,
+			Name:         "aName",
+			Unit:         model.Gram,
+			Price:        1.0,
+			UnitsInStock: 0,
+			CreatedAt:    now,
+			LastModified: now,
+		}
+		err := ingredientRepository.SaveIngredient(ctx, ingredient)
+		require.NoError(t, err)
+
+		ingredientRepository.SaveIngredientStock(ctx, &model.IngredientStock{
+			ID:           -1,
+			IngredientID: ingredient.ID,
+			Price:        1.0,
+			Units:        5,
+			CreatedAt:    clock.Now(),
 		})
+		ingredientRepository.SaveIngredientStock(ctx, &model.IngredientStock{
+			ID:           -1,
+			IngredientID: ingredient.ID,
+			Price:        2.0,
+			Units:        7,
+			CreatedAt:    clock.Now(),
+		})
+
+		modifiedIngredient, err := ingredientRepository.GetIngredient(ctx, ingredient.ID)
 		require.NoError(t, err)
 
-		ingredientRepository.UpdateStock(ctx, ing1.ID, rpst.NewStockOptions{NewUnits: 5, Price: 1.0})
-		ingredientRepository.UpdateStock(ctx, ing1.ID, rpst.NewStockOptions{NewUnits: 7, Price: 2.0})
-
-		modifiedIngredient, err := ingredientRepository.GetIngredient(ctx, ing1.ID)
-		require.NoError(t, err)
-
-		assert.Equal(t, ing1.UnitsInStock+5+7, modifiedIngredient.UnitsInStock)
+		assert.Equal(t, ingredient.UnitsInStock+5+7, modifiedIngredient.UnitsInStock)
 	})
 
-	t.Run("should update ingredient price correctly", func(t *testing.T) {
+	t.Run("when adding ingredient stock should update price correctly", func(t *testing.T) {
 		db, _ := database.NewFromDatasource(":memory:", logger)
 
 		ingredientRepository := rpst.NewIngredientRepository(db, clock, logger)
-		ingredientUsecases := usecases.NewIngredientUseCases(ingredientRepository, clock)
 		ctx := context.Background()
-		ing1, err := ingredientUsecases.CreateIngredient(ctx, usecases.CreateIngredientOptions{
-			Name:  "ing1",
-			Price: 10.0,
-			Unit:  model.Gram,
-		})
+		now := clock.Now()
+		ingredient := &model.Ingredient{
+			ID:           1,
+			Name:         "aName",
+			Unit:         model.Gram,
+			Price:        1.0,
+			UnitsInStock: 0,
+			CreatedAt:    now,
+			LastModified: now,
+		}
+		err := ingredientRepository.SaveIngredient(ctx, ingredient)
 		require.NoError(t, err)
 
-		ingredientRepository.UpdateStock(ctx, ing1.ID, rpst.NewStockOptions{NewUnits: 5, Price: 1.0})
-		ingredientRepository.UpdateStock(ctx, ing1.ID, rpst.NewStockOptions{NewUnits: 7, Price: 2.0})
+		ingredientRepository.SaveIngredientStock(ctx, &model.IngredientStock{
+			ID:           -1,
+			IngredientID: ingredient.ID,
+			Price:        1.0,
+			Units:        5,
+			CreatedAt:    clock.Now(),
+		})
+		ingredientRepository.SaveIngredientStock(ctx, &model.IngredientStock{
+			ID:           -1,
+			IngredientID: ingredient.ID,
+			Price:        2.0,
+			Units:        7,
+			CreatedAt:    clock.Now(),
+		})
 
-		modifiedIngredient, err := ingredientRepository.GetIngredient(ctx, ing1.ID)
+		modifiedIngredient, err := ingredientRepository.GetIngredient(ctx, ingredient.ID)
 		require.NoError(t, err)
 
 		assert.Equal(t, 2.0, modifiedIngredient.Price)
 	})
 
-	t.Run("update stock of inexistent ingredient should return error", func(t *testing.T) {
+	t.Run("adding stock of inexistent ingredient should return error", func(t *testing.T) {
 		db, _ := database.NewFromDatasource(":memory:", logger)
-
 		ingredientRepository := rpst.NewIngredientRepository(db, clock, logger)
-		ingredientUsecases := usecases.NewIngredientUseCases(ingredientRepository, clock)
 		ctx := context.Background()
-		ing1, err := ingredientUsecases.CreateIngredient(ctx, usecases.CreateIngredientOptions{
-			Name:  "ing1",
-			Price: 10.0,
-			Unit:  model.Gram,
+		now := clock.Now()
+		ingredient := &model.Ingredient{
+			ID:           1,
+			Name:         "aName",
+			Unit:         model.Gram,
+			Price:        1.0,
+			UnitsInStock: 0,
+			CreatedAt:    now,
+			LastModified: now,
+		}
+		err := ingredientRepository.SaveIngredient(ctx, ingredient)
+		require.NoError(t, err)
+
+		ingredientRepository.SaveIngredientStock(ctx, &model.IngredientStock{
+			ID:           -1,
+			IngredientID: ingredient.ID,
+			Price:        1.0,
+			Units:        5,
+			CreatedAt:    clock.Now(),
 		})
 		require.NoError(t, err)
 
-		ingredientRepository.UpdateStock(ctx, ing1.ID, rpst.NewStockOptions{NewUnits: 5, Price: 1.0})
-		require.NoError(t, err)
-
-		_, err = ingredientRepository.UpdateStock(ctx, ing1.ID+1, rpst.NewStockOptions{NewUnits: 7, Price: 1.0})
+		err = ingredientRepository.SaveIngredientStock(ctx, &model.IngredientStock{
+			ID:           -1,
+			IngredientID: ingredient.ID + 1,
+			Price:        1.0,
+			Units:        5,
+			CreatedAt:    clock.Now(),
+		})
 		require.Error(t, err)
 		assert.Equal(t, err, rpst.ErrNotFound)
 	})
 
-	t.Run("update stock should return error if query returns error", func(t *testing.T) {
+	t.Run("add ingredient stock should return error if query returns error", func(t *testing.T) {
 		db := new(databaseMock)
 		ingredientRepository := rpst.NewIngredientRepository(db, clock, logger)
-		ctx := context.Background()
-
-		_, err := ingredientRepository.UpdateStock(ctx, 1, rpst.NewStockOptions{NewUnits: 7, Price: 1.0})
+		err := ingredientRepository.SaveIngredientStock(context.Background(), &model.IngredientStock{
+			ID:           -1,
+			IngredientID: 1,
+			Price:        1.0,
+			Units:        5,
+			CreatedAt:    clock.Now(),
+		})
 		require.Error(t, err)
 		assert.Equal(t, err, ErrDBInternal)
 	})

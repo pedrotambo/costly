@@ -46,11 +46,11 @@ type database struct {
 }
 
 func New(connectionString string, logger logger.Logger) (Database, error) {
-	return NewFromDatasource(fmt.Sprintf("file:%s?_foreign_keys=on", connectionString), logger)
+	return NewFromDatasource(fmt.Sprintf("file:%s", connectionString), logger)
 }
 
 func NewFromDatasource(datasourceName string, logger logger.Logger) (Database, error) {
-	db, err := sql.Open("sqlite3", datasourceName)
+	db, err := sql.Open("sqlite3", datasourceName+"?_foreign_keys=on")
 	if err != nil {
 		return nil, fmt.Errorf("failed to open connection to db: %w", err)
 	}

@@ -45,7 +45,7 @@ func NewRouter(useCases usecases.UseCases, authMiddleware Middleware, middleware
 		r.Post("/ingredients", handlers.CreateIngredientHandler(useCases))
 		r.Get("/ingredients/{ingredientID}", handlers.GetIngredientHandler(useCases))
 		r.Put("/ingredients/{ingredientID}", handlers.EditIngredientHandler(useCases))
-		r.Put("/ingredients/stock/{ingredientID}", handlers.UpdateIngredientStockHandler(useCases))
+		r.Post("/ingredients/{ingredientID}/stock", handlers.AddIngredientStockHandler(useCases))
 
 		// recipes
 		r.Post("/recipes", handlers.CreateRecipeHandler(useCases))

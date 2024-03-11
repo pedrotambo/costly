@@ -50,3 +50,9 @@ func mapToRecipeDB(rowScanner database.RowScanner) (recipeDB, error) {
 	err := rowScanner.Scan(&recipe.id, &recipe.name, &recipe.createdAt, &recipe.lastModified)
 	return recipe, err
 }
+
+func mapToIngredientStock(rowScanner database.RowScanner) (model.IngredientStock, error) {
+	var stock model.IngredientStock
+	err := rowScanner.Scan(&stock.ID, &stock.IngredientID, &stock.Units, &stock.Price, &stock.CreatedAt)
+	return stock, err
+}

@@ -7,15 +7,10 @@ import (
 	"costly/core/ports/rpst"
 )
 
-type CreateIngredientOptions struct {
-	Name  string
-	Price float64
-	Unit  model.Unit
-}
-
 type IngredientUseCases interface {
 	IngredientCreator
 	IngredientEditor
+	IngredientStockAdder
 }
 
 type IngredientCreator interface {
@@ -24,6 +19,10 @@ type IngredientCreator interface {
 
 type IngredientEditor interface {
 	EditIngredient(ctx context.Context, ingredientID int64, ingredientOpts CreateIngredientOptions) (*model.Ingredient, error)
+}
+
+type IngredientStockAdder interface {
+	AddIngredientStock(ctx context.Context, ingredientID int64, ingredientStockOpts IngredientStockOptions) (*model.IngredientStock, error)
 }
 
 type ingredientUseCases struct {
@@ -36,6 +35,12 @@ func NewIngredientUseCases(repository rpst.IngredientRepository, clock clock.Clo
 		repository: repository,
 		clock:      clock,
 	}
+}
+
+type CreateIngredientOptions struct {
+	Name  string
+	Price float64
+	Unit  model.Unit
 }
 
 func (ic *ingredientUseCases) CreateIngredient(ctx context.Context, ingredientOpts CreateIngredientOptions) (*model.Ingredient, error) {
@@ -76,4 +81,27 @@ func (ic *ingredientUseCases) EditIngredient(ctx context.Context, ingredientID i
 	}
 
 	return &ingredient, nil
+}
+
+type IngredientStockOptions struct {
+	Units int
+	Price float64
+}
+
+func (ic *ingredientUseCases) AddIngredientStock(ctx context.Context, ingredientID int64, ingredientStockOpts IngredientStockOptions) (*model.IngredientStock, error) {
+	ingredientStock := &model.IngredientStock{
+		ID:           -1,
+		IngredientID: ingredientID,
+		Units:        ingredientStockOpts.Units,
+		Price:        ingredientStockOpts.Price,
+		CreatedAt:    ic.clock.Now(),
+	}
+
+	err := ic.repository.SaveIngredientStock(ctx, ingredientStock)
+
+	if err != nil {
+		return &model.IngredientStock{}, err
+	}
+
+	return ingredientStock, nil
 }

@@ -25,11 +25,11 @@ type Ingredient struct {
 }
 
 type IngredientStock struct {
-	ID           int64
-	IngredientID int64
-	Units        int
-	Price        float64
-	CreatedAt    time.Time
+	ID           int64     `json:"id"`
+	IngredientID int64     `json:"ingredient_id"`
+	Units        int       `json:"units"`
+	Price        float64   `json:"price"`
+	CreatedAt    time.Time `json:"created_at"`
 }
 
 type RecipeIngredient struct {
