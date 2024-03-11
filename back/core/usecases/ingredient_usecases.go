@@ -13,18 +13,6 @@ type IngredientUseCases interface {
 	IngredientStockAdder
 }
 
-type IngredientCreator interface {
-	CreateIngredient(ctx context.Context, ingredientOpts CreateIngredientOptions) (*model.Ingredient, error)
-}
-
-type IngredientEditor interface {
-	EditIngredient(ctx context.Context, ingredientID int64, ingredientOpts CreateIngredientOptions) (*model.Ingredient, error)
-}
-
-type IngredientStockAdder interface {
-	AddIngredientStock(ctx context.Context, ingredientID int64, ingredientStockOpts IngredientStockOptions) (*model.IngredientStock, error)
-}
-
 type ingredientUseCases struct {
 	repository rpst.IngredientRepository
 	clock      clock.Clock
@@ -35,6 +23,10 @@ func NewIngredientUseCases(repository rpst.IngredientRepository, clock clock.Clo
 		repository: repository,
 		clock:      clock,
 	}
+}
+
+type IngredientCreator interface {
+	CreateIngredient(ctx context.Context, ingredientOpts CreateIngredientOptions) (*model.Ingredient, error)
 }
 
 type CreateIngredientOptions struct {
@@ -64,28 +56,28 @@ func (ic *ingredientUseCases) CreateIngredient(ctx context.Context, ingredientOp
 	return newIngredient, nil
 }
 
-func (ic *ingredientUseCases) EditIngredient(ctx context.Context, ingredientID int64, ingredientOpts CreateIngredientOptions) (*model.Ingredient, error) {
-	ingredient, err := ic.repository.GetIngredient(ctx, ingredientID)
-	if err != nil {
-		return &ingredient, err
-	}
-	ingredient.Name = ingredientOpts.Name
-	ingredient.Price = ingredientOpts.Price
-	ingredient.Unit = ingredientOpts.Unit
-	ingredient.LastModified = ic.clock.Now()
+type IngredientEditor interface {
+	EditIngredient(ctx context.Context, ingredientID int64, ingredientOpts CreateIngredientOptions) error
+}
 
-	err = ic.repository.UpdateIngredient(ctx, &ingredient)
-
-	if err != nil {
-		return &ingredient, err
-	}
-
-	return &ingredient, nil
+func (ic *ingredientUseCases) EditIngredient(ctx context.Context, ingredientID int64, ingredientOpts CreateIngredientOptions) error {
+	err := ic.repository.UpdateIngredient(ctx, ingredientID, func(ingredient *model.Ingredient) error {
+		ingredient.Name = ingredientOpts.Name
+		ingredient.Price = ingredientOpts.Price
+		ingredient.Unit = ingredientOpts.Unit
+		ingredient.LastModified = ic.clock.Now()
+		return nil
+	})
+	return err
 }
 
 type IngredientStockOptions struct {
 	Units int
 	Price float64
+}
+
+type IngredientStockAdder interface {
+	AddIngredientStock(ctx context.Context, ingredientID int64, ingredientStockOpts IngredientStockOptions) (*model.IngredientStock, error)
 }
 
 func (ic *ingredientUseCases) AddIngredientStock(ctx context.Context, ingredientID int64, ingredientStockOpts IngredientStockOptions) (*model.IngredientStock, error) {

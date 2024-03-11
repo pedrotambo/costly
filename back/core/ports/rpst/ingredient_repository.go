@@ -19,7 +19,7 @@ type IngredientsGetter interface {
 
 type IngredientRepository interface {
 	SaveIngredient(ctx context.Context, ingredient *model.Ingredient) error
-	UpdateIngredient(ctx context.Context, ingredient *model.Ingredient) error
+	UpdateIngredient(ctx context.Context, ingredientID int64, updateFunc func(ingredient *model.Ingredient) error) error
 	IngredientGetter
 	IngredientsGetter
 	SaveIngredientStock(ctx context.Context, ingredientStock *model.IngredientStock) error
@@ -73,18 +73,6 @@ func (r *ingredientRepository) SaveIngredient(ctx context.Context, ingredient *m
 		return err
 	}
 	ingredient.ID = ingredientID
-	return nil
-}
-
-func (r *ingredientRepository) UpdateIngredient(ctx context.Context, ingredient *model.Ingredient) error {
-	_, err := queryRowAndMap(ctx, r.db, mapToIngredient, "UPDATE ingredient SET name = ?, unit = ?, price = ?, last_modified = ? WHERE id = ? RETURNING *", ingredient.Name, ingredient.Unit, ingredient.Price, ingredient.LastModified, ingredient.ID)
-	if err == sql.ErrNoRows {
-		r.logger.Error(ErrNotFound, "error updating unexistent ingredient")
-		return ErrNotFound
-	} else if err != nil {
-		r.logger.Error(err, "error updating ingredient")
-		return err
-	}
 	return nil
 }
 
@@ -153,4 +141,21 @@ func (r *ingredientRepository) GetIngredientStockHistory(ctx context.Context, in
 		return nil, err
 	}
 	return ingredients, nil
+}
+
+func (r *ingredientRepository) UpdateIngredient(ctx context.Context, ingredientID int64, updateFunc func(ingredient *model.Ingredient) error) error {
+	ingredient, err := r.GetIngredient(ctx, ingredientID)
+	if err != nil {
+		return err
+	}
+	updateFunc(&ingredient)
+	_, err = queryRowAndMap(ctx, r.db, mapToIngredient, "UPDATE ingredient SET name = ?, unit = ?, price = ?, last_modified = ? WHERE id = ? RETURNING *", ingredient.Name, ingredient.Unit, ingredient.Price, ingredient.LastModified, ingredient.ID)
+	if err == sql.ErrNoRows {
+		r.logger.Error(ErrNotFound, "error updating unexistent ingredient")
+		return ErrNotFound
+	} else if err != nil {
+		r.logger.Error(err, "error updating ingredient")
+		return err
+	}
+	return nil
 }

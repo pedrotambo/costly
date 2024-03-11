@@ -111,7 +111,7 @@ func TestEditIngredient(t *testing.T) {
 			Price: ing1.Price + 10.0,
 			Unit:  model.Kilogram,
 		}
-		_, err = ingredientUsecases.EditIngredient(ctx, ing1.ID, newIngredientOpts)
+		err = ingredientUsecases.EditIngredient(ctx, ing1.ID, newIngredientOpts)
 		require.NoError(t, err)
 
 		modifiedIngredient, err := ingredientRepository.GetIngredient(ctx, ing1.ID)

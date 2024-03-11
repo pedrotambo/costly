@@ -23,7 +23,7 @@ func EditIngredientHandler(ingredientEditor usecases.IngredientEditor) http.Hand
 			return
 		}
 
-		_, err = ingredientEditor.EditIngredient(r.Context(), int64(ingredientID), editIngredientOpts)
+		err = ingredientEditor.EditIngredient(r.Context(), int64(ingredientID), editIngredientOpts)
 		if err == rpst.ErrNotFound {
 			w.WriteHeader(http.StatusNotFound)
 			return
