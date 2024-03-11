@@ -37,7 +37,7 @@ func CreateIngredientHandler(ingredientCreator ingredients.IngredientCreator) ht
 			return
 		}
 
-		ingredient, err := ingredientCreator.CreateIngredient(r.Context(), createIngredientOpts)
+		ingredient, err := ingredientCreator.Create(r.Context(), createIngredientOpts)
 		if err != nil {
 			logger.Error(r.Context(), err, "error getting ingredient")
 			w.WriteHeader(http.StatusInternalServerError)

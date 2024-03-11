@@ -40,7 +40,7 @@ func AddIngredientStockHandler(ingredientStockAdder ingredients.IngredientStockA
 			return
 		}
 
-		ingredientStock, err := ingredientStockAdder.AddIngredientStock(r.Context(), int64(ingredientID), ingredientStockOptions)
+		ingredientStock, err := ingredientStockAdder.AddStock(r.Context(), int64(ingredientID), ingredientStockOptions)
 		if err == errs.ErrNotFound {
 			w.WriteHeader(http.StatusNotFound)
 			return

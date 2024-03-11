@@ -37,7 +37,7 @@ func TestGetIngredient(t *testing.T) {
 			CreatedAt:    now,
 			LastModified: now,
 		}
-		err := ingredientRepository.SaveIngredient(ctx, ingredient)
+		err := ingredientRepository.Add(ctx, ingredient)
 		require.NoError(t, err)
 
 		ingredient2 := &model.Ingredient{
@@ -49,10 +49,10 @@ func TestGetIngredient(t *testing.T) {
 			CreatedAt:    now,
 			LastModified: now,
 		}
-		err = ingredientRepository.SaveIngredient(ctx, ingredient2)
+		err = ingredientRepository.Add(ctx, ingredient2)
 		require.NoError(t, err)
 
-		ingr1Get, err := ingredientRepository.GetIngredient(ctx, ingredient.ID)
+		ingr1Get, err := ingredientRepository.Find(ctx, ingredient.ID)
 		require.NoError(t, err)
 
 		assert.Equal(t, ingredient, &ingr1Get)
@@ -62,7 +62,7 @@ func TestGetIngredient(t *testing.T) {
 		db, _ := database.NewFromDatasource(":memory:", logger)
 		ingredientRepository := rpst.New(db, clock, logger)
 
-		_, err := ingredientRepository.GetIngredient(context.Background(), 123)
+		_, err := ingredientRepository.Find(context.Background(), 123)
 
 		require.Error(t, err)
 		assert.Equal(t, err, errs.ErrNotFound)
@@ -89,7 +89,7 @@ func TestGetIngredients(t *testing.T) {
 			CreatedAt:    now,
 			LastModified: now,
 		}
-		err := ingredientRepository.SaveIngredient(ctx, ingredient)
+		err := ingredientRepository.Add(ctx, ingredient)
 		require.NoError(t, err)
 
 		ingredient2 := &model.Ingredient{
@@ -101,10 +101,10 @@ func TestGetIngredients(t *testing.T) {
 			CreatedAt:    now,
 			LastModified: now,
 		}
-		err = ingredientRepository.SaveIngredient(ctx, ingredient2)
+		err = ingredientRepository.Add(ctx, ingredient2)
 		require.NoError(t, err)
 
-		ingredients, err := ingredientRepository.GetIngredients(ctx)
+		ingredients, err := ingredientRepository.FindAll(ctx)
 		require.NoError(t, err)
 
 		assert.Equal(t, ingredient, &ingredients[0])
@@ -131,17 +131,17 @@ func TestAddIngredientStock(t *testing.T) {
 			CreatedAt:    now,
 			LastModified: now,
 		}
-		err := ingredientRepository.SaveIngredient(ctx, ingredient)
+		err := ingredientRepository.Add(ctx, ingredient)
 		require.NoError(t, err)
 
-		ingredientRepository.SaveIngredientStock(ctx, &model.IngredientStock{
+		ingredientRepository.AddStock(ctx, &model.IngredientStock{
 			ID:           -1,
 			IngredientID: ingredient.ID,
 			Price:        1.0,
 			Units:        5,
 			CreatedAt:    clock.Now(),
 		})
-		ingredientRepository.SaveIngredientStock(ctx, &model.IngredientStock{
+		ingredientRepository.AddStock(ctx, &model.IngredientStock{
 			ID:           -1,
 			IngredientID: ingredient.ID,
 			Price:        2.0,
@@ -149,7 +149,7 @@ func TestAddIngredientStock(t *testing.T) {
 			CreatedAt:    clock.Now(),
 		})
 
-		modifiedIngredient, err := ingredientRepository.GetIngredient(ctx, ingredient.ID)
+		modifiedIngredient, err := ingredientRepository.Find(ctx, ingredient.ID)
 		require.NoError(t, err)
 
 		assert.Equal(t, ingredient.UnitsInStock+5+7, modifiedIngredient.UnitsInStock)
@@ -170,17 +170,17 @@ func TestAddIngredientStock(t *testing.T) {
 			CreatedAt:    now,
 			LastModified: now,
 		}
-		err := ingredientRepository.SaveIngredient(ctx, ingredient)
+		err := ingredientRepository.Add(ctx, ingredient)
 		require.NoError(t, err)
 
-		ingredientRepository.SaveIngredientStock(ctx, &model.IngredientStock{
+		ingredientRepository.AddStock(ctx, &model.IngredientStock{
 			ID:           -1,
 			IngredientID: ingredient.ID,
 			Price:        1.0,
 			Units:        5,
 			CreatedAt:    clock.Now(),
 		})
-		ingredientRepository.SaveIngredientStock(ctx, &model.IngredientStock{
+		ingredientRepository.AddStock(ctx, &model.IngredientStock{
 			ID:           -1,
 			IngredientID: ingredient.ID,
 			Price:        2.0,
@@ -188,7 +188,7 @@ func TestAddIngredientStock(t *testing.T) {
 			CreatedAt:    clock.Now(),
 		})
 
-		modifiedIngredient, err := ingredientRepository.GetIngredient(ctx, ingredient.ID)
+		modifiedIngredient, err := ingredientRepository.Find(ctx, ingredient.ID)
 		require.NoError(t, err)
 
 		assert.Equal(t, 2.0, modifiedIngredient.Price)
@@ -208,10 +208,10 @@ func TestAddIngredientStock(t *testing.T) {
 			CreatedAt:    now,
 			LastModified: now,
 		}
-		err := ingredientRepository.SaveIngredient(ctx, ingredient)
+		err := ingredientRepository.Add(ctx, ingredient)
 		require.NoError(t, err)
 
-		ingredientRepository.SaveIngredientStock(ctx, &model.IngredientStock{
+		ingredientRepository.AddStock(ctx, &model.IngredientStock{
 			ID:           -1,
 			IngredientID: ingredient.ID,
 			Price:        1.0,
@@ -220,7 +220,7 @@ func TestAddIngredientStock(t *testing.T) {
 		})
 		require.NoError(t, err)
 
-		err = ingredientRepository.SaveIngredientStock(ctx, &model.IngredientStock{
+		err = ingredientRepository.AddStock(ctx, &model.IngredientStock{
 			ID:           -1,
 			IngredientID: ingredient.ID + 1,
 			Price:        1.0,
@@ -234,7 +234,7 @@ func TestAddIngredientStock(t *testing.T) {
 	t.Run("add ingredient stock should return error if query returns error", func(t *testing.T) {
 		db := new(databaseMock)
 		ingredientRepository := rpst.New(db, clock, logger)
-		err := ingredientRepository.SaveIngredientStock(context.Background(), &model.IngredientStock{
+		err := ingredientRepository.AddStock(context.Background(), &model.IngredientStock{
 			ID:           -1,
 			IngredientID: 1,
 			Price:        1.0,

@@ -23,7 +23,7 @@ func runGetIngredientsHandler(t *testing.T, clock clock.Clock, ingrOpts []ingred
 	db, _ := database.NewFromDatasource(":memory:", logger)
 	ingredientComponent := ingredients.New(db, clock, logger)
 	for _, opts := range ingrOpts {
-		ingredientComponent.CreateIngredient(context.Background(), opts)
+		ingredientComponent.Create(context.Background(), opts)
 	}
 
 	handler := handlers.GetIngredientsHandler(ingredientComponent)

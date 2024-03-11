@@ -24,7 +24,7 @@ func runAddIngredientStockHandler(t *testing.T, clock clock.Clock, ingredientIDs
 	logger, _ := logger.New("debug")
 	db, _ := database.NewFromDatasource(":memory:", logger)
 	ingredientComponent := ingredients.New(db, clock, logger)
-	ingredientComponent.CreateIngredient(context.Background(), ingredients.CreateIngredientOptions{
+	ingredientComponent.Create(context.Background(), ingredients.CreateIngredientOptions{
 		Name:  "ingredientName",
 		Price: 12.43,
 		Unit:  model.Gram,

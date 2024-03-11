@@ -24,7 +24,7 @@ func runGetRecipeHandler(t *testing.T, clock clock.Clock, recipeIDstr string) *h
 	db, _ := database.NewFromDatasource(":memory:", logger)
 	ingredientComponent := ingredients.New(db, clock, logger)
 	recipeComponent := recipes.New(db, clock, logger, ingredientComponent)
-	_, err := ingredientComponent.CreateIngredient(context.Background(), ingredients.CreateIngredientOptions{
+	_, err := ingredientComponent.Create(context.Background(), ingredients.CreateIngredientOptions{
 		Name:  "ingr1",
 		Price: 1.50,
 		Unit:  model.Gram,
@@ -34,7 +34,7 @@ func runGetRecipeHandler(t *testing.T, clock clock.Clock, recipeIDstr string) *h
 		t.Fatal()
 	}
 
-	_, err = ingredientComponent.CreateIngredient(context.Background(), ingredients.CreateIngredientOptions{
+	_, err = ingredientComponent.Create(context.Background(), ingredients.CreateIngredientOptions{
 		Name:  "ingr2",
 		Price: 2.50,
 		Unit:  model.Gram,
@@ -44,7 +44,7 @@ func runGetRecipeHandler(t *testing.T, clock clock.Clock, recipeIDstr string) *h
 		t.Fatal()
 	}
 
-	recipeComponent.CreateRecipe(context.Background(), recipes.CreateRecipeOptions{
+	recipeComponent.Create(context.Background(), recipes.CreateRecipeOptions{
 		Name: "recipe1",
 		Ingredients: []recipes.RecipeIngredientOptions{
 			{

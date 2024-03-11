@@ -40,7 +40,7 @@ func AddRecipeSalesHandler(recipeSalesAddres recipes.RecipeSalesAdder) http.Hand
 			return
 		}
 
-		ingredientStock, err := recipeSalesAddres.AddRecipeSales(r.Context(), recipeID, opts.SoldUnits)
+		ingredientStock, err := recipeSalesAddres.AddSales(r.Context(), recipeID, opts.SoldUnits)
 		if err == errs.ErrNotFound {
 			w.WriteHeader(http.StatusNotFound)
 			return

@@ -37,7 +37,7 @@ func createDBWithIngredients(logger logger.Logger, clock clock.Clock) database.D
 		},
 	}
 	for _, ingredient := range ingredientOpts {
-		ingredientComponent.CreateIngredient(ctx, ingredient)
+		ingredientComponent.Create(ctx, ingredient)
 	}
 
 	return db
@@ -60,7 +60,7 @@ func TestGetRecipe(t *testing.T) {
 			CreatedAt:    now,
 			LastModified: now,
 		}
-		err := repo.SaveRecipe(ctx, &recipe1)
+		err := repo.Add(ctx, &recipe1)
 		require.NoError(t, err)
 		recipe2 := model.Recipe{
 			ID:           -1,
@@ -69,10 +69,10 @@ func TestGetRecipe(t *testing.T) {
 			CreatedAt:    now,
 			LastModified: now,
 		}
-		err = repo.SaveRecipe(ctx, &recipe2)
+		err = repo.Add(ctx, &recipe2)
 		require.NoError(t, err)
 
-		recipe1Get, err := repo.GetRecipe(ctx, recipe1.ID)
+		recipe1Get, err := repo.Find(ctx, recipe1.ID)
 		require.NoError(t, err)
 
 		assert.Equal(t, recipe1, recipe1Get)
@@ -96,7 +96,7 @@ func TestGetRecipes(t *testing.T) {
 			CreatedAt:    now,
 			LastModified: now,
 		}
-		err := repo.SaveRecipe(ctx, &recipe1)
+		err := repo.Add(ctx, &recipe1)
 		require.NoError(t, err)
 		recipe2 := model.Recipe{
 			ID:           -1,
@@ -105,10 +105,10 @@ func TestGetRecipes(t *testing.T) {
 			CreatedAt:    now,
 			LastModified: now,
 		}
-		err = repo.SaveRecipe(ctx, &recipe2)
+		err = repo.Add(ctx, &recipe2)
 		require.NoError(t, err)
 
-		recipes, err := repo.GetRecipes(ctx)
+		recipes, err := repo.FindAll(ctx)
 		require.NoError(t, err)
 
 		assert.Equal(t, recipe1, recipes[0])

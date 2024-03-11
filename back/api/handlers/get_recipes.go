@@ -6,9 +6,9 @@ import (
 	"net/http"
 )
 
-func GetRecipesHandler(recipesGetter recipes.RecipesGetter) http.HandlerFunc {
+func GetRecipesHandler(recipesGetter recipes.RecipesFinder) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		recipes, err := recipesGetter.GetRecipes(r.Context())
+		recipes, err := recipesGetter.FindAll(r.Context())
 		if err != nil {
 			logger.Error(r.Context(), err, "error getting recipes")
 			w.WriteHeader(http.StatusInternalServerError)

@@ -33,7 +33,7 @@ func CreateRecipeHandler(recipeCreator recipes.RecipeCreator) http.HandlerFunc {
 			return
 		}
 
-		recipe, err := recipeCreator.CreateRecipe(r.Context(), createRecipeOptions)
+		recipe, err := recipeCreator.Create(r.Context(), createRecipeOptions)
 		if err == errs.ErrBadOpts {
 			w.WriteHeader(http.StatusBadRequest)
 			return

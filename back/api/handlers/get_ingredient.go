@@ -8,7 +8,7 @@ import (
 	"strconv"
 )
 
-func GetIngredientHandler(ingredientGetter ingredients.IngredientGetter) http.HandlerFunc {
+func GetIngredientHandler(ingredientGetter ingredients.IngredientFinder) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ingredientIDstr := r.PathValue("ingredientID")
 		ingredientID, err := strconv.ParseInt(ingredientIDstr, 10, 64)
@@ -16,7 +16,7 @@ func GetIngredientHandler(ingredientGetter ingredients.IngredientGetter) http.Ha
 			RespondJSON(w, http.StatusBadRequest, ErrBadID)
 		}
 
-		ingredient, err := ingredientGetter.GetIngredient(r.Context(), ingredientID)
+		ingredient, err := ingredientGetter.Find(r.Context(), ingredientID)
 		if err == errs.ErrNotFound {
 			w.WriteHeader(http.StatusNotFound)
 			return

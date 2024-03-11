@@ -44,7 +44,7 @@ func createDBWithIngredients(logger logger.Logger, clock clock.Clock) (database.
 	ctx := context.Background()
 	var createdIngredients = []model.Ingredient{}
 	for _, ingredient := range []ingredients.CreateIngredientOptions{meat, salt, pepper} {
-		ing, _ := ingredientComponent.CreateIngredient(ctx, ingredients.CreateIngredientOptions{
+		ing, _ := ingredientComponent.Create(ctx, ingredients.CreateIngredientOptions{
 			Name:  ingredient.Name,
 			Price: ingredient.Price,
 			Unit:  ingredient.Unit,
@@ -68,7 +68,7 @@ func TestCreateRecipe(t *testing.T) {
 
 		recipeComponent := recipes.New(db, clockMock, logger, ingredientComponent)
 
-		recipe, err := recipeComponent.CreateRecipe(context.Background(), recipes.CreateRecipeOptions{
+		recipe, err := recipeComponent.Create(context.Background(), recipes.CreateRecipeOptions{
 			Name: "recipeName",
 			Ingredients: []recipes.RecipeIngredientOptions{
 				{
@@ -109,7 +109,7 @@ func TestCreateRecipe(t *testing.T) {
 		recipeComponent := recipes.New(db, clock, logger, ingredientComponent)
 		existentRecipeName := "name"
 
-		recipeComponent.CreateRecipe(context.Background(), recipes.CreateRecipeOptions{
+		recipeComponent.Create(context.Background(), recipes.CreateRecipeOptions{
 			Name: existentRecipeName,
 			Ingredients: []recipes.RecipeIngredientOptions{
 				{
@@ -119,7 +119,7 @@ func TestCreateRecipe(t *testing.T) {
 			},
 		})
 
-		_, err := recipeComponent.CreateRecipe(context.Background(), recipes.CreateRecipeOptions{
+		_, err := recipeComponent.Create(context.Background(), recipes.CreateRecipeOptions{
 			Name: existentRecipeName,
 			Ingredients: []recipes.RecipeIngredientOptions{
 				{
@@ -141,7 +141,7 @@ func TestCreateRecipe(t *testing.T) {
 		for _, i := range ingredients {
 			unexistentIngredientID += i.ID
 		}
-		_, err := recipeComponent.CreateRecipe(context.Background(), recipes.CreateRecipeOptions{
+		_, err := recipeComponent.Create(context.Background(), recipes.CreateRecipeOptions{
 			Name: existentRecipeName,
 			Ingredients: []recipes.RecipeIngredientOptions{
 				{
@@ -157,12 +157,12 @@ func TestCreateRecipe(t *testing.T) {
 		db, _, ingredientComponent := createDBWithIngredients(logger, clock)
 
 		recipeComponent := recipes.New(db, clock, logger, ingredientComponent)
-		recipe1, err := recipeComponent.CreateRecipe(context.Background(), recipes.CreateRecipeOptions{
+		recipe1, err := recipeComponent.Create(context.Background(), recipes.CreateRecipeOptions{
 			Name:        "recipe1",
 			Ingredients: []recipes.RecipeIngredientOptions{},
 		})
 		require.NoError(t, err)
-		recipe2, err := recipeComponent.CreateRecipe(context.Background(), recipes.CreateRecipeOptions{
+		recipe2, err := recipeComponent.Create(context.Background(), recipes.CreateRecipeOptions{
 			Name:        "recipe2",
 			Ingredients: []recipes.RecipeIngredientOptions{},
 		})
@@ -181,18 +181,18 @@ func TestGetRecipe(t *testing.T) {
 
 		recipeComponent := recipes.New(db, clock, logger, ingredientComponent)
 		ctx := context.Background()
-		recipe1, err := recipeComponent.CreateRecipe(context.Background(), recipes.CreateRecipeOptions{
+		recipe1, err := recipeComponent.Create(context.Background(), recipes.CreateRecipeOptions{
 			Name:        "recipe1",
 			Ingredients: []recipes.RecipeIngredientOptions{},
 		})
 		require.NoError(t, err)
-		_, err = recipeComponent.CreateRecipe(context.Background(), recipes.CreateRecipeOptions{
+		_, err = recipeComponent.Create(context.Background(), recipes.CreateRecipeOptions{
 			Name:        "recipe2",
 			Ingredients: []recipes.RecipeIngredientOptions{},
 		})
 		require.NoError(t, err)
 
-		recipe1Get, err := recipeComponent.GetRecipe(ctx, recipe1.ID)
+		recipe1Get, err := recipeComponent.Find(ctx, recipe1.ID)
 		require.NoError(t, err)
 
 		assert.Equal(t, recipe1, &recipe1Get)
@@ -202,7 +202,7 @@ func TestGetRecipe(t *testing.T) {
 		db, _, ingredientComponent := createDBWithIngredients(logger, clock)
 		recipeComponent := recipes.New(db, clock, logger, ingredientComponent)
 
-		_, err := recipeComponent.GetRecipe(context.Background(), 123)
+		_, err := recipeComponent.Find(context.Background(), 123)
 
 		require.Error(t, err)
 		assert.Equal(t, err, errs.ErrNotFound)
@@ -218,18 +218,18 @@ func TestGetRecipes(t *testing.T) {
 
 		recipeComponent := recipes.New(db, clock, logger, ingredientComponent)
 		ctx := context.Background()
-		recipe1, err := recipeComponent.CreateRecipe(context.Background(), recipes.CreateRecipeOptions{
+		recipe1, err := recipeComponent.Create(context.Background(), recipes.CreateRecipeOptions{
 			Name:        "recipe1",
 			Ingredients: []recipes.RecipeIngredientOptions{},
 		})
 		require.NoError(t, err)
-		recipe2, err := recipeComponent.CreateRecipe(context.Background(), recipes.CreateRecipeOptions{
+		recipe2, err := recipeComponent.Create(context.Background(), recipes.CreateRecipeOptions{
 			Name:        "recipe2",
 			Ingredients: []recipes.RecipeIngredientOptions{},
 		})
 		require.NoError(t, err)
 
-		recipes, err := recipeComponent.GetRecipes(ctx)
+		recipes, err := recipeComponent.FindAll(ctx)
 		require.NoError(t, err)
 
 		assert.Equal(t, recipe1, &recipes[0])

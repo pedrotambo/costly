@@ -23,7 +23,7 @@ func EditIngredientHandler(ingredientEditor ingredients.IngredientEditor) http.H
 			return
 		}
 
-		err = ingredientEditor.EditIngredient(r.Context(), int64(ingredientID), editIngredientOpts)
+		err = ingredientEditor.Update(r.Context(), int64(ingredientID), editIngredientOpts)
 		if err == errs.ErrNotFound {
 			w.WriteHeader(http.StatusNotFound)
 			return

@@ -14,7 +14,7 @@ type RecipeResponse struct {
 	Cost float64 `json:"cost"`
 }
 
-func GetRecipeHandler(recipeGetter recipes.RecipeGetter) http.HandlerFunc {
+func GetRecipeHandler(recipeGetter recipes.RecipeFinder) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		recipeIDstr := r.PathValue("recipeID")
 		recipeID, err := strconv.ParseInt(recipeIDstr, 10, 64)
@@ -22,7 +22,7 @@ func GetRecipeHandler(recipeGetter recipes.RecipeGetter) http.HandlerFunc {
 			RespondJSON(w, http.StatusBadRequest, ErrBadID)
 		}
 
-		recipe, err := recipeGetter.GetRecipe(r.Context(), recipeID)
+		recipe, err := recipeGetter.Find(r.Context(), recipeID)
 		if err == errs.ErrNotFound {
 			w.WriteHeader(http.StatusNotFound)
 			return

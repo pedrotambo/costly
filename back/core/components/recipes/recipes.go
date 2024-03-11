@@ -15,22 +15,13 @@ import (
 type RecipeComponent interface {
 	RecipeCreator
 	RecipeSalesAdder
-	RecipeGetter
-	RecipesGetter
+	RecipeFinder
+	RecipesFinder
 }
 
 type RecipeIngredientOptions struct {
 	ID    int64
 	Units int
-}
-
-type CreateRecipeOptions struct {
-	Name        string
-	Ingredients []RecipeIngredientOptions
-}
-
-type RecipeCreator interface {
-	CreateRecipe(ctx context.Context, recipeOpts CreateRecipeOptions) (*model.Recipe, error)
 }
 
 type recipeUseCases struct {
@@ -49,11 +40,20 @@ func New(database database.Database, clock clock.Clock, logger logger.Logger, in
 	}
 }
 
-func (cr *recipeUseCases) CreateRecipe(ctx context.Context, recipeOpts CreateRecipeOptions) (*model.Recipe, error) {
+type RecipeCreator interface {
+	Create(ctx context.Context, recipeOpts CreateRecipeOptions) (*model.Recipe, error)
+}
+
+type CreateRecipeOptions struct {
+	Name        string
+	Ingredients []RecipeIngredientOptions
+}
+
+func (cr *recipeUseCases) Create(ctx context.Context, recipeOpts CreateRecipeOptions) (*model.Recipe, error) {
 	now := cr.clock.Now()
 	recipeIngredients := []model.RecipeIngredient{}
 	for _, recipeIngredient := range recipeOpts.Ingredients {
-		ingredient, err := cr.ingredients.GetIngredient(ctx, recipeIngredient.ID)
+		ingredient, err := cr.ingredients.Find(ctx, recipeIngredient.ID)
 		if err == errs.ErrNotFound {
 			return &model.Recipe{}, fmt.Errorf("failed to create recipe: unexistent ingredient with ID %d", recipeIngredient.ID)
 		} else if err != nil {
@@ -74,7 +74,7 @@ func (cr *recipeUseCases) CreateRecipe(ctx context.Context, recipeOpts CreateRec
 		LastModified: now,
 	}
 
-	err := cr.repository.SaveRecipe(ctx, newRecipe)
+	err := cr.repository.Add(ctx, newRecipe)
 
 	if err != nil {
 		return &model.Recipe{}, fmt.Errorf("failed to create recipe: %s", err)
@@ -89,10 +89,10 @@ type RecipeSalesOpts struct {
 }
 
 type RecipeSalesAdder interface {
-	AddRecipeSales(ctx context.Context, recipeID int64, soldUnits int) (*model.RecipeSales, error)
+	AddSales(ctx context.Context, recipeID int64, soldUnits int) (*model.RecipeSales, error)
 }
 
-func (cr *recipeUseCases) AddRecipeSales(ctx context.Context, recipeID int64, soldUnits int) (*model.RecipeSales, error) {
+func (cr *recipeUseCases) AddSales(ctx context.Context, recipeID int64, soldUnits int) (*model.RecipeSales, error) {
 	now := cr.clock.Now()
 	recipeSales := &model.RecipeSales{
 		ID:        -1,
@@ -100,7 +100,7 @@ func (cr *recipeUseCases) AddRecipeSales(ctx context.Context, recipeID int64, so
 		Units:     soldUnits,
 		CreatedAt: now,
 	}
-	err := cr.repository.SaveRecipeSales(ctx, recipeSales)
+	err := cr.repository.AddSales(ctx, recipeSales)
 
 	if err != nil {
 		return &model.RecipeSales{}, fmt.Errorf("failed to add recipe sales: %s", err)
@@ -109,18 +109,18 @@ func (cr *recipeUseCases) AddRecipeSales(ctx context.Context, recipeID int64, so
 	return recipeSales, nil
 }
 
-type RecipeGetter interface {
-	GetRecipe(ctx context.Context, id int64) (model.Recipe, error)
+type RecipeFinder interface {
+	Find(ctx context.Context, id int64) (model.Recipe, error)
 }
 
-func (cr *recipeUseCases) GetRecipe(ctx context.Context, id int64) (model.Recipe, error) {
-	return cr.repository.GetRecipe(ctx, id)
+func (cr *recipeUseCases) Find(ctx context.Context, id int64) (model.Recipe, error) {
+	return cr.repository.Find(ctx, id)
 }
 
-type RecipesGetter interface {
-	GetRecipes(ctx context.Context) ([]model.Recipe, error)
+type RecipesFinder interface {
+	FindAll(ctx context.Context) ([]model.Recipe, error)
 }
 
-func (cr *recipeUseCases) GetRecipes(ctx context.Context) ([]model.Recipe, error) {
-	return cr.repository.GetRecipes(ctx)
+func (cr *recipeUseCases) FindAll(ctx context.Context) ([]model.Recipe, error) {
+	return cr.repository.FindAll(ctx)
 }

@@ -27,7 +27,7 @@ func TestCreateIngredient(t *testing.T) {
 		clockMock.On("Now").Return(now)
 
 		ingredientComponent := ingredients.New(db, clockMock, logger)
-		ingredient, err := ingredientComponent.CreateIngredient(context.Background(), ingredients.CreateIngredientOptions{
+		ingredient, err := ingredientComponent.Create(context.Background(), ingredients.CreateIngredientOptions{
 			Name:  "name",
 			Price: 10.0,
 			Unit:  model.Gram,
@@ -50,13 +50,13 @@ func TestCreateIngredient(t *testing.T) {
 
 		ingredientComponent := ingredients.New(db, clock, logger)
 		existentIngredientName := "name"
-		ingredientComponent.CreateIngredient(context.Background(), ingredients.CreateIngredientOptions{
+		ingredientComponent.Create(context.Background(), ingredients.CreateIngredientOptions{
 			Name:  existentIngredientName,
 			Price: 10.0,
 			Unit:  model.Gram,
 		})
 
-		_, err := ingredientComponent.CreateIngredient(context.Background(), ingredients.CreateIngredientOptions{
+		_, err := ingredientComponent.Create(context.Background(), ingredients.CreateIngredientOptions{
 			Name:  existentIngredientName,
 			Price: 1123450.0,
 			Unit:  model.Kilogram,
@@ -69,13 +69,13 @@ func TestCreateIngredient(t *testing.T) {
 
 		ingredientComponent := ingredients.New(db, clock, logger)
 		ctx := context.Background()
-		ing1, err := ingredientComponent.CreateIngredient(ctx, ingredients.CreateIngredientOptions{
+		ing1, err := ingredientComponent.Create(ctx, ingredients.CreateIngredientOptions{
 			Name:  "ing1",
 			Price: 10.0,
 			Unit:  model.Gram,
 		})
 		require.NoError(t, err)
-		ing2, err := ingredientComponent.CreateIngredient(ctx, ingredients.CreateIngredientOptions{
+		ing2, err := ingredientComponent.Create(ctx, ingredients.CreateIngredientOptions{
 			Name:  "ing2",
 			Price: 1231231231.0,
 			Unit:  model.Gram,
@@ -95,7 +95,7 @@ func TestEditIngredient(t *testing.T) {
 
 		ingredientComponent := ingredients.New(db, clock, logger)
 		ctx := context.Background()
-		ing1, err := ingredientComponent.CreateIngredient(ctx, ingredients.CreateIngredientOptions{
+		ing1, err := ingredientComponent.Create(ctx, ingredients.CreateIngredientOptions{
 			Name:  "ing1",
 			Price: 10.0,
 			Unit:  model.Gram,
@@ -107,10 +107,10 @@ func TestEditIngredient(t *testing.T) {
 			Price: ing1.Price + 10.0,
 			Unit:  model.Kilogram,
 		}
-		err = ingredientComponent.EditIngredient(ctx, ing1.ID, newIngredientOpts)
+		err = ingredientComponent.Update(ctx, ing1.ID, newIngredientOpts)
 		require.NoError(t, err)
 
-		modifiedIngredient, err := ingredientComponent.GetIngredient(ctx, ing1.ID)
+		modifiedIngredient, err := ingredientComponent.Find(ctx, ing1.ID)
 		require.NoError(t, err)
 
 		assert.Equal(t, modifiedIngredient.Name, newIngredientOpts.Name)

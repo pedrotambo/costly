@@ -13,8 +13,8 @@ type IngredientComponent interface {
 	IngredientCreator
 	IngredientEditor
 	IngredientStockAdder
-	IngredientGetter
-	IngredientsGetter
+	IngredientFinder
+	IngredientsFinder
 }
 
 type ingredientComponent struct {
@@ -31,7 +31,7 @@ func New(database database.Database, clock clock.Clock, logger logger.Logger) In
 }
 
 type IngredientCreator interface {
-	CreateIngredient(ctx context.Context, ingredientOpts CreateIngredientOptions) (*model.Ingredient, error)
+	Create(ctx context.Context, ingredientOpts CreateIngredientOptions) (*model.Ingredient, error)
 }
 
 type CreateIngredientOptions struct {
@@ -40,7 +40,7 @@ type CreateIngredientOptions struct {
 	Unit  model.Unit
 }
 
-func (ic *ingredientComponent) CreateIngredient(ctx context.Context, ingredientOpts CreateIngredientOptions) (*model.Ingredient, error) {
+func (ic *ingredientComponent) Create(ctx context.Context, ingredientOpts CreateIngredientOptions) (*model.Ingredient, error) {
 	now := ic.clock.Now()
 	newIngredient := &model.Ingredient{
 		ID:           -1,
@@ -52,7 +52,7 @@ func (ic *ingredientComponent) CreateIngredient(ctx context.Context, ingredientO
 		LastModified: now,
 	}
 
-	err := ic.repository.SaveIngredient(ctx, newIngredient)
+	err := ic.repository.Add(ctx, newIngredient)
 
 	if err != nil {
 		return nil, err
@@ -62,11 +62,11 @@ func (ic *ingredientComponent) CreateIngredient(ctx context.Context, ingredientO
 }
 
 type IngredientEditor interface {
-	EditIngredient(ctx context.Context, ingredientID int64, ingredientOpts CreateIngredientOptions) error
+	Update(ctx context.Context, ingredientID int64, ingredientOpts CreateIngredientOptions) error
 }
 
-func (ic *ingredientComponent) EditIngredient(ctx context.Context, ingredientID int64, ingredientOpts CreateIngredientOptions) error {
-	err := ic.repository.UpdateIngredient(ctx, ingredientID, func(ingredient *model.Ingredient) error {
+func (ic *ingredientComponent) Update(ctx context.Context, ingredientID int64, ingredientOpts CreateIngredientOptions) error {
+	err := ic.repository.Update(ctx, ingredientID, func(ingredient *model.Ingredient) error {
 		ingredient.Name = ingredientOpts.Name
 		ingredient.Price = ingredientOpts.Price
 		ingredient.Unit = ingredientOpts.Unit
@@ -82,10 +82,10 @@ type IngredientStockOptions struct {
 }
 
 type IngredientStockAdder interface {
-	AddIngredientStock(ctx context.Context, ingredientID int64, ingredientStockOpts IngredientStockOptions) (*model.IngredientStock, error)
+	AddStock(ctx context.Context, ingredientID int64, ingredientStockOpts IngredientStockOptions) (*model.IngredientStock, error)
 }
 
-func (ic *ingredientComponent) AddIngredientStock(ctx context.Context, ingredientID int64, ingredientStockOpts IngredientStockOptions) (*model.IngredientStock, error) {
+func (ic *ingredientComponent) AddStock(ctx context.Context, ingredientID int64, ingredientStockOpts IngredientStockOptions) (*model.IngredientStock, error) {
 	ingredientStock := &model.IngredientStock{
 		ID:           -1,
 		IngredientID: ingredientID,
@@ -94,7 +94,7 @@ func (ic *ingredientComponent) AddIngredientStock(ctx context.Context, ingredien
 		CreatedAt:    ic.clock.Now(),
 	}
 
-	err := ic.repository.SaveIngredientStock(ctx, ingredientStock)
+	err := ic.repository.AddStock(ctx, ingredientStock)
 
 	if err != nil {
 		return &model.IngredientStock{}, err
@@ -103,18 +103,18 @@ func (ic *ingredientComponent) AddIngredientStock(ctx context.Context, ingredien
 	return ingredientStock, nil
 }
 
-type IngredientGetter interface {
-	GetIngredient(ctx context.Context, id int64) (model.Ingredient, error)
+type IngredientFinder interface {
+	Find(ctx context.Context, id int64) (model.Ingredient, error)
 }
 
-func (ic *ingredientComponent) GetIngredient(ctx context.Context, id int64) (model.Ingredient, error) {
-	return ic.repository.GetIngredient(ctx, id)
+func (ic *ingredientComponent) Find(ctx context.Context, id int64) (model.Ingredient, error) {
+	return ic.repository.Find(ctx, id)
 }
 
-type IngredientsGetter interface {
-	GetIngredients(ctx context.Context) ([]model.Ingredient, error)
+type IngredientsFinder interface {
+	FindAll(ctx context.Context) ([]model.Ingredient, error)
 }
 
-func (ic *ingredientComponent) GetIngredients(ctx context.Context) ([]model.Ingredient, error) {
-	return ic.repository.GetIngredients(ctx)
+func (ic *ingredientComponent) FindAll(ctx context.Context) ([]model.Ingredient, error) {
+	return ic.repository.FindAll(ctx)
 }

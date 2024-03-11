@@ -10,11 +10,11 @@ import (
 )
 
 type Components struct {
-	ingredients.IngredientComponent
-	recipes.RecipeComponent
-	clock.Clock
-	logger.Logger
-	database.Database
+	Ingredients ingredients.IngredientComponent
+	Recipes     recipes.RecipeComponent
+	Clock       clock.Clock
+	Logger      logger.Logger
+	Database    database.Database
 }
 
 type Config struct {
@@ -39,10 +39,10 @@ func InitComponents(config *Config) (*Components, error) {
 	ingredientComponent := ingredients.New(database, clock, logger)
 	recipeComponent := recipes.New(database, clock, logger, ingredientComponent)
 	return &Components{
-		IngredientComponent: ingredientComponent,
-		RecipeComponent:     recipeComponent,
-		Logger:              logger,
-		Database:            database,
-		Clock:               clock,
+		Ingredients: ingredientComponent,
+		Recipes:     recipeComponent,
+		Logger:      logger,
+		Database:    database,
+		Clock:       clock,
 	}, nil
 }

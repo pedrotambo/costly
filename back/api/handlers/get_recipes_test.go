@@ -24,19 +24,19 @@ func runGetRecipesHandler(t *testing.T, clock clock.Clock, recipeOpts []recipes.
 	db, _ := database.NewFromDatasource(":memory:", logger)
 	ingredientComponent := ingredients.New(db, clock, logger)
 	recipeComponent := recipes.New(db, clock, logger, ingredientComponent)
-	ingredientComponent.CreateIngredient(context.Background(), ingredients.CreateIngredientOptions{
+	ingredientComponent.Create(context.Background(), ingredients.CreateIngredientOptions{
 		Name:  "ingr1",
 		Price: 1.50,
 		Unit:  model.Gram,
 	})
-	ingredientComponent.CreateIngredient(context.Background(), ingredients.CreateIngredientOptions{
+	ingredientComponent.Create(context.Background(), ingredients.CreateIngredientOptions{
 		Name:  "ingr2",
 		Price: 2.50,
 		Unit:  model.Gram,
 	})
 
 	for _, opts := range recipeOpts {
-		recipeComponent.CreateRecipe(context.Background(), opts)
+		recipeComponent.Create(context.Background(), opts)
 	}
 
 	handler := handlers.GetRecipesHandler(recipeComponent)

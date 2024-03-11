@@ -41,17 +41,17 @@ func NewRouter(components *comps.Components, authMiddleware Middleware, middlewa
 	r.Group(func(r chi.Router) {
 		r.Use(authMiddleware)
 		// ingredients
-		r.Get("/ingredients", handlers.GetIngredientsHandler(components))
-		r.Post("/ingredients", handlers.CreateIngredientHandler(components))
-		r.Get("/ingredients/{ingredientID}", handlers.GetIngredientHandler(components))
-		r.Put("/ingredients/{ingredientID}", handlers.EditIngredientHandler(components))
-		r.Post("/ingredients/{ingredientID}/stock", handlers.AddIngredientStockHandler(components))
+		r.Get("/ingredients", handlers.GetIngredientsHandler(components.Ingredients))
+		r.Post("/ingredients", handlers.CreateIngredientHandler(components.Ingredients))
+		r.Get("/ingredients/{ingredientID}", handlers.GetIngredientHandler(components.Ingredients))
+		r.Put("/ingredients/{ingredientID}", handlers.EditIngredientHandler(components.Ingredients))
+		r.Post("/ingredients/{ingredientID}/stock", handlers.AddIngredientStockHandler(components.Ingredients))
 
 		// recipes
-		r.Post("/recipes", handlers.CreateRecipeHandler(components))
-		r.Get("/recipes", handlers.GetRecipesHandler(components))
-		r.Get("/recipes/{recipeID}", handlers.GetRecipeHandler(components))
-		r.Post("/recipes/{recipeID}/sales", handlers.AddRecipeSalesHandler(components))
+		r.Post("/recipes", handlers.CreateRecipeHandler(components.Recipes))
+		r.Get("/recipes", handlers.GetRecipesHandler(components.Recipes))
+		r.Get("/recipes/{recipeID}", handlers.GetRecipeHandler(components.Recipes))
+		r.Post("/recipes/{recipeID}/sales", handlers.AddRecipeSalesHandler(components.Recipes))
 	})
 
 	return r
