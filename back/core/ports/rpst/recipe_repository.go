@@ -22,6 +22,7 @@ type RecipeRepository interface {
 	SaveRecipe(ctx context.Context, recipe *model.Recipe) error
 	RecipeGetter
 	RecipesGetter
+	SaveRecipeSales(ctx context.Context, recipeSales *model.RecipeSales) error
 }
 
 type recipeRepository struct {
@@ -49,6 +50,26 @@ func (r *recipeRepository) GetRecipe(ctx context.Context, id int64) (model.Recip
 		return model.Recipe{}, err
 	}
 	recipeIngredients, err := queryAndMap(ctx, r.db, mapToRecipeIngredient, "SELECT i.*, ri.units FROM ingredient i JOIN recipe_ingredient ri ON i.id = ri.ingredient_id AND ri.recipe_id = ?", id)
+	if err != nil {
+		return model.Recipe{}, err
+	}
+	return model.Recipe{
+		ID:           recipeDB.id,
+		Name:         recipeDB.name,
+		Ingredients:  recipeIngredients,
+		CreatedAt:    recipeDB.createdAt,
+		LastModified: recipeDB.lastModified,
+	}, nil
+}
+
+func getRecipe(ctx context.Context, tx database.TX, id int64) (model.Recipe, error) {
+	recipeDB, err := queryRowAndMap(ctx, tx, mapToRecipeDB, "SELECT * FROM recipe WHERE id = ?", id)
+	if err == sql.ErrNoRows {
+		return model.Recipe{}, ErrNotFound
+	} else if err != nil {
+		return model.Recipe{}, err
+	}
+	recipeIngredients, err := queryAndMap(ctx, tx, mapToRecipeIngredient, "SELECT i.*, ri.units FROM ingredient i JOIN recipe_ingredient ri ON i.id = ri.ingredient_id AND ri.recipe_id = ?", id)
 	if err != nil {
 		return model.Recipe{}, err
 	}
@@ -102,6 +123,46 @@ func (r *recipeRepository) SaveRecipe(ctx context.Context, recipe *model.Recipe)
 			}
 		}
 		recipe.ID = recipeID
+		return nil
+	})
+}
+
+func (r *recipeRepository) SaveRecipeSales(ctx context.Context, recipeSales *model.RecipeSales) error {
+	return r.db.WithTx(ctx, func(tx database.TX) error {
+
+		recipe, err := getRecipe(ctx, tx, recipeSales.RecipeID)
+
+		if err != nil {
+			return err
+		}
+
+		for _, recipeIngredient := range recipe.Ingredients {
+			ingredientUsedUnits := recipeIngredient.Units * recipeSales.Units
+			res, err := tx.ExecContext(ctx, "UPDATE ingredient SET units_in_stock = units_in_stock - ?, last_modified = ? WHERE id = ?", ingredientUsedUnits, recipeSales.CreatedAt, recipeIngredient.Ingredient.ID)
+			if err != nil {
+				return err
+			}
+			if rows, err := res.RowsAffected(); err != nil {
+				return err
+			} else if rows == 0 {
+				return ErrNotFound
+			}
+		}
+
+		result, err := tx.ExecContext(ctx, "INSERT INTO sold_recipes_history (recipe_id, units, created_at) VALUES (?, ?, ?)", recipeSales.RecipeID, recipeSales.Units, recipeSales.CreatedAt)
+
+		if err != nil {
+			r.logger.Error(err, "error saving ingredient stock")
+			return err
+		}
+
+		recipeSalesID, err := result.LastInsertId()
+
+		if err != nil {
+			return err
+		}
+
+		recipeSales.ID = recipeSalesID
 		return nil
 	})
 }

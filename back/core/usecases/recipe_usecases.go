@@ -10,6 +10,7 @@ import (
 
 type RecipeUseCases interface {
 	RecipeCreator
+	RecipeSalesAdder
 }
 
 type RecipeIngredientOptions struct {
@@ -70,4 +71,30 @@ func (cr *recipeUseCases) CreateRecipe(ctx context.Context, recipeOpts CreateRec
 	}
 
 	return newRecipe, nil
+}
+
+type RecipeSalesOpts struct {
+	RecipeID int64
+	Units    int
+}
+
+type RecipeSalesAdder interface {
+	AddRecipeSales(ctx context.Context, recipeID int64, soldUnits int) (*model.RecipeSales, error)
+}
+
+func (cr *recipeUseCases) AddRecipeSales(ctx context.Context, recipeID int64, soldUnits int) (*model.RecipeSales, error) {
+	now := cr.clock.Now()
+	recipeSales := &model.RecipeSales{
+		ID:        -1,
+		RecipeID:  recipeID,
+		Units:     soldUnits,
+		CreatedAt: now,
+	}
+	err := cr.repository.SaveRecipeSales(ctx, recipeSales)
+
+	if err != nil {
+		return &model.RecipeSales{}, fmt.Errorf("failed to add recipe sales: %s", err)
+	}
+
+	return recipeSales, nil
 }

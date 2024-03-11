@@ -54,3 +54,10 @@ func (recipe *Recipe) Cost() float64 {
 
 	return cost
 }
+
+type RecipeSales struct {
+	ID        int64
+	RecipeID  int64
+	Units     int
+	CreatedAt time.Time
+}
