@@ -25,7 +25,7 @@ func TestGetIngredient(t *testing.T) {
 	t.Run("should get correct ingredient if existent", func(t *testing.T) {
 		db, _ := database.NewFromDatasource(":memory:", logger)
 
-		ingredientRepository := rpst.New(db, clock, logger)
+		ingredientRepository := rpst.New(db, logger)
 		ctx := context.Background()
 		now := clock.Now()
 		ingredient := &model.Ingredient{
@@ -60,7 +60,7 @@ func TestGetIngredient(t *testing.T) {
 
 	t.Run("should return error when requesting an inexistent ingredient", func(t *testing.T) {
 		db, _ := database.NewFromDatasource(":memory:", logger)
-		ingredientRepository := rpst.New(db, clock, logger)
+		ingredientRepository := rpst.New(db, logger)
 
 		_, err := ingredientRepository.Find(context.Background(), 123)
 
@@ -77,7 +77,7 @@ func TestGetIngredients(t *testing.T) {
 	t.Run("should get list of existent ingredients", func(t *testing.T) {
 		db, _ := database.NewFromDatasource(":memory:", logger)
 
-		ingredientRepository := rpst.New(db, clock, logger)
+		ingredientRepository := rpst.New(db, logger)
 		ctx := context.Background()
 		now := clock.Now()
 		ingredient := &model.Ingredient{
@@ -119,7 +119,7 @@ func TestAddIngredientStock(t *testing.T) {
 	t.Run("should add ingredient units in stock correctly", func(t *testing.T) {
 		db, _ := database.NewFromDatasource(":memory:", logger)
 
-		ingredientRepository := rpst.New(db, clock, logger)
+		ingredientRepository := rpst.New(db, logger)
 		ctx := context.Background()
 		now := clock.Now()
 		ingredient := &model.Ingredient{
@@ -158,7 +158,7 @@ func TestAddIngredientStock(t *testing.T) {
 	t.Run("when adding ingredient stock should update price correctly", func(t *testing.T) {
 		db, _ := database.NewFromDatasource(":memory:", logger)
 
-		ingredientRepository := rpst.New(db, clock, logger)
+		ingredientRepository := rpst.New(db, logger)
 		ctx := context.Background()
 		now := clock.Now()
 		ingredient := &model.Ingredient{
@@ -196,7 +196,7 @@ func TestAddIngredientStock(t *testing.T) {
 
 	t.Run("adding stock of inexistent ingredient should return error", func(t *testing.T) {
 		db, _ := database.NewFromDatasource(":memory:", logger)
-		ingredientRepository := rpst.New(db, clock, logger)
+		ingredientRepository := rpst.New(db, logger)
 		ctx := context.Background()
 		now := clock.Now()
 		ingredient := &model.Ingredient{
@@ -233,7 +233,7 @@ func TestAddIngredientStock(t *testing.T) {
 
 	t.Run("add ingredient stock should return error if query returns error", func(t *testing.T) {
 		db := new(databaseMock)
-		ingredientRepository := rpst.New(db, clock, logger)
+		ingredientRepository := rpst.New(db, logger)
 		err := ingredientRepository.AddStock(context.Background(), &model.IngredientStock{
 			ID:           -1,
 			IngredientID: 1,

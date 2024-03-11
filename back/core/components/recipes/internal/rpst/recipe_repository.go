@@ -2,7 +2,6 @@ package rpst
 
 import (
 	"context"
-	"costly/core/components/clock"
 	"costly/core/components/database"
 	"costly/core/components/logger"
 	"costly/core/errs"
@@ -28,7 +27,6 @@ type RecipeRepository interface {
 
 type recipeRepository struct {
 	db     database.Database
-	clock  clock.Clock
 	logger logger.Logger
 }
 
@@ -39,8 +37,8 @@ type recipeDB struct {
 	lastModified time.Time
 }
 
-func New(db database.Database, clock clock.Clock, logger logger.Logger) RecipeRepository {
-	return &recipeRepository{db, clock, logger}
+func New(db database.Database, logger logger.Logger) RecipeRepository {
+	return &recipeRepository{db, logger}
 }
 
 func (r *recipeRepository) Find(ctx context.Context, id int64) (model.Recipe, error) {

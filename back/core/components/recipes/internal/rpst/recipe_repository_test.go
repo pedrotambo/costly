@@ -50,7 +50,7 @@ func TestGetRecipe(t *testing.T) {
 	t.Run("should get correct recipe if existent", func(t *testing.T) {
 		db := createDBWithIngredients(logger, clock)
 
-		repo := rpst.New(db, clock, logger)
+		repo := rpst.New(db, logger)
 		ctx := context.Background()
 		now := clock.Now()
 		recipe1 := model.Recipe{
@@ -86,7 +86,7 @@ func TestGetRecipes(t *testing.T) {
 	t.Run("should get correct recipes if existent", func(t *testing.T) {
 		db := createDBWithIngredients(logger, clock)
 
-		repo := rpst.New(db, clock, logger)
+		repo := rpst.New(db, logger)
 		ctx := context.Background()
 		now := clock.Now()
 		recipe1 := model.Recipe{

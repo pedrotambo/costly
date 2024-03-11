@@ -23,7 +23,7 @@ type ingredientComponent struct {
 }
 
 func New(database database.Database, clock clock.Clock, logger logger.Logger) IngredientComponent {
-	ingredientRepository := rpst.New(database, clock, logger)
+	ingredientRepository := rpst.New(database, logger)
 	return &ingredientComponent{
 		repository: ingredientRepository,
 		clock:      clock,

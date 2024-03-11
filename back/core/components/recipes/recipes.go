@@ -32,7 +32,7 @@ type recipeUseCases struct {
 }
 
 func New(database database.Database, clock clock.Clock, logger logger.Logger, ingredients ingredients.IngredientComponent) RecipeComponent {
-	recipeRepository := rpst.New(database, clock, logger)
+	recipeRepository := rpst.New(database, logger)
 	return &recipeUseCases{
 		repository:  recipeRepository,
 		clock:       clock,
