@@ -3,11 +3,7 @@ package api
 import (
 	"context"
 	comps "costly/core/components"
-	"costly/core/components/clock"
-	"costly/core/components/database"
-	"costly/core/components/ingredients"
 	"costly/core/components/logger"
-	"costly/core/components/recipes"
 	"fmt"
 	"net/http"
 	"os"
@@ -25,7 +21,7 @@ type server struct {
 }
 
 func NewServer(config *Config) Server {
-	components, err := initComponents(config)
+	components, err := comps.InitComponents(&config.ComponentsConfig)
 	logger := components.Logger
 	if err != nil {
 		fmt.Printf("Could not initialize components. Err: %s\n", err)
@@ -70,27 +66,4 @@ func (s *server) Start() {
 	logger.Info("app stopped")
 
 	fmt.Println(done)
-}
-
-func initComponents(config *Config) (*comps.Components, error) {
-	logger, err := logger.New(config.LogLevel)
-	if err != nil {
-		fmt.Printf("Could not create logger. Err: %s\n", err)
-		return &comps.Components{}, err
-	}
-	database, err := database.New(config.Database.ConnectionString, logger)
-	if err != nil {
-		logger.Error(err, "could not initialize database")
-		return &comps.Components{}, err
-	}
-	clock := clock.New()
-	ingredientComponent := ingredients.New(database, clock, logger)
-	recipeComponent := recipes.New(database, clock, logger, ingredientComponent)
-	return &comps.Components{
-		IngredientComponent: ingredientComponent,
-		RecipeComponent:     recipeComponent,
-		Logger:              logger,
-		Database:            database,
-		Clock:               clock,
-	}, nil
 }
