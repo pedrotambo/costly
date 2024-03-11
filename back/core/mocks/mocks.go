@@ -1,4 +1,4 @@
-package usecases_test
+package mocks
 
 import (
 	"fmt"
@@ -7,11 +7,11 @@ import (
 	"github.com/stretchr/testify/mock"
 )
 
-type clockMock struct {
+type ClockMock struct {
 	mock.Mock
 }
 
-func (m *clockMock) Now() time.Time {
+func (m *ClockMock) Now() time.Time {
 	args := m.Called()
 	value := args.Get(0)
 	now, ok := value.(time.Time)

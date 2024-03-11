@@ -2,11 +2,12 @@ package rpst_test
 
 import (
 	"context"
+	"costly/core/components/clock"
+	"costly/core/components/database"
+	"costly/core/components/ingredients"
+	"costly/core/components/logger"
+	"costly/core/components/recipes/internal/rpst"
 	"costly/core/model"
-	clck "costly/core/ports/clock"
-	"costly/core/ports/database"
-	"costly/core/ports/logger"
-	"costly/core/ports/rpst"
 	"testing"
 
 	_ "github.com/mattn/go-sqlite3"
@@ -14,46 +15,29 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-var now = clck.New().Now()
-
-var meat = &model.Ingredient{
-	ID:           -1,
-	Name:         "meat",
-	Unit:         model.Gram,
-	Price:        1.0,
-	UnitsInStock: 0,
-	CreatedAt:    now,
-	LastModified: now,
-}
-
-var salt = &model.Ingredient{
-	ID:           -1,
-	Name:         "salt",
-	Price:        10.0,
-	Unit:         model.Gram,
-	UnitsInStock: 0,
-	CreatedAt:    now,
-	LastModified: now,
-}
-
-var pepper = &model.Ingredient{
-	ID:           -1,
-	Name:         "pepper",
-	Price:        13.0,
-	Unit:         model.Gram,
-	UnitsInStock: 0,
-	CreatedAt:    now,
-	LastModified: now,
-}
-
-func createDBWithIngredients(logger logger.Logger, clock clck.Clock) database.Database {
+func createDBWithIngredients(logger logger.Logger, clock clock.Clock) database.Database {
 	db, _ := database.NewFromDatasource(":memory:", logger)
-	ingredientRepository := rpst.NewIngredientRepository(db, clock, logger)
+	ingredientComponent := ingredients.New(db, clock, logger)
 	ctx := context.Background()
-
-	var ingredients = []*model.Ingredient{meat, salt, pepper}
-	for _, ingredient := range ingredients {
-		ingredientRepository.SaveIngredient(ctx, ingredient)
+	var ingredientOpts = []ingredients.CreateIngredientOptions{
+		{
+			Name:  "meat",
+			Price: 1.0,
+			Unit:  model.Gram,
+		},
+		{
+			Name:  "salt",
+			Price: 10.0,
+			Unit:  model.Gram,
+		},
+		{
+			Name:  "pepper",
+			Price: 13.0,
+			Unit:  model.Gram,
+		},
+	}
+	for _, ingredient := range ingredientOpts {
+		ingredientComponent.CreateIngredient(ctx, ingredient)
 	}
 
 	return db
@@ -61,12 +45,12 @@ func createDBWithIngredients(logger logger.Logger, clock clck.Clock) database.Da
 
 func TestGetRecipe(t *testing.T) {
 	logger, _ := logger.New("debug")
-	clock := clck.New()
+	clock := clock.New()
 
 	t.Run("should get correct recipe if existent", func(t *testing.T) {
 		db := createDBWithIngredients(logger, clock)
 
-		repo := rpst.NewRecipeRepository(db, clock, logger)
+		repo := rpst.New(db, clock, logger)
 		ctx := context.Background()
 		now := clock.Now()
 		recipe1 := model.Recipe{
@@ -97,7 +81,7 @@ func TestGetRecipe(t *testing.T) {
 
 func TestGetRecipes(t *testing.T) {
 	logger, _ := logger.New("debug")
-	clock := clck.New()
+	clock := clock.New()
 
 	t.Run("should get correct recipes if existent", func(t *testing.T) {
 		db := createDBWithIngredients(logger, clock)

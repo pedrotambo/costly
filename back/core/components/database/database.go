@@ -2,7 +2,7 @@ package database
 
 import (
 	"context"
-	"costly/core/ports/logger"
+	"costly/core/components/logger"
 	sql2 "costly/sql"
 	"database/sql"
 	"fmt"

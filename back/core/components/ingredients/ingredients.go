@@ -1,26 +1,31 @@
-package usecases
+package ingredients
 
 import (
 	"context"
+	"costly/core/components/clock"
+	"costly/core/components/database"
+	"costly/core/components/ingredients/internal/rpst"
+	"costly/core/components/logger"
 	"costly/core/model"
-	"costly/core/ports/clock"
-	"costly/core/ports/rpst"
 )
 
-type IngredientUseCases interface {
+type IngredientComponent interface {
 	IngredientCreator
 	IngredientEditor
 	IngredientStockAdder
+	IngredientGetter
+	IngredientsGetter
 }
 
-type ingredientUseCases struct {
+type ingredientComponent struct {
 	repository rpst.IngredientRepository
 	clock      clock.Clock
 }
 
-func NewIngredientUseCases(repository rpst.IngredientRepository, clock clock.Clock) IngredientUseCases {
-	return &ingredientUseCases{
-		repository: repository,
+func New(database database.Database, clock clock.Clock, logger logger.Logger) IngredientComponent {
+	ingredientRepository := rpst.New(database, clock, logger)
+	return &ingredientComponent{
+		repository: ingredientRepository,
 		clock:      clock,
 	}
 }
@@ -35,7 +40,7 @@ type CreateIngredientOptions struct {
 	Unit  model.Unit
 }
 
-func (ic *ingredientUseCases) CreateIngredient(ctx context.Context, ingredientOpts CreateIngredientOptions) (*model.Ingredient, error) {
+func (ic *ingredientComponent) CreateIngredient(ctx context.Context, ingredientOpts CreateIngredientOptions) (*model.Ingredient, error) {
 	now := ic.clock.Now()
 	newIngredient := &model.Ingredient{
 		ID:           -1,
@@ -60,7 +65,7 @@ type IngredientEditor interface {
 	EditIngredient(ctx context.Context, ingredientID int64, ingredientOpts CreateIngredientOptions) error
 }
 
-func (ic *ingredientUseCases) EditIngredient(ctx context.Context, ingredientID int64, ingredientOpts CreateIngredientOptions) error {
+func (ic *ingredientComponent) EditIngredient(ctx context.Context, ingredientID int64, ingredientOpts CreateIngredientOptions) error {
 	err := ic.repository.UpdateIngredient(ctx, ingredientID, func(ingredient *model.Ingredient) error {
 		ingredient.Name = ingredientOpts.Name
 		ingredient.Price = ingredientOpts.Price
@@ -80,7 +85,7 @@ type IngredientStockAdder interface {
 	AddIngredientStock(ctx context.Context, ingredientID int64, ingredientStockOpts IngredientStockOptions) (*model.IngredientStock, error)
 }
 
-func (ic *ingredientUseCases) AddIngredientStock(ctx context.Context, ingredientID int64, ingredientStockOpts IngredientStockOptions) (*model.IngredientStock, error) {
+func (ic *ingredientComponent) AddIngredientStock(ctx context.Context, ingredientID int64, ingredientStockOpts IngredientStockOptions) (*model.IngredientStock, error) {
 	ingredientStock := &model.IngredientStock{
 		ID:           -1,
 		IngredientID: ingredientID,
@@ -96,4 +101,20 @@ func (ic *ingredientUseCases) AddIngredientStock(ctx context.Context, ingredient
 	}
 
 	return ingredientStock, nil
+}
+
+type IngredientGetter interface {
+	GetIngredient(ctx context.Context, id int64) (model.Ingredient, error)
+}
+
+func (ic *ingredientComponent) GetIngredient(ctx context.Context, id int64) (model.Ingredient, error) {
+	return ic.repository.GetIngredient(ctx, id)
+}
+
+type IngredientsGetter interface {
+	GetIngredients(ctx context.Context) ([]model.Ingredient, error)
+}
+
+func (ic *ingredientComponent) GetIngredients(ctx context.Context) ([]model.Ingredient, error) {
+	return ic.repository.GetIngredients(ctx)
 }

@@ -1,9 +1,10 @@
 package handlers
 
 import (
+	"costly/core/components/logger"
+	"costly/core/components/recipes"
+	"costly/core/errs"
 	"costly/core/model"
-	"costly/core/ports/logger"
-	"costly/core/ports/rpst"
 	"net/http"
 	"strconv"
 )
@@ -13,7 +14,7 @@ type RecipeResponse struct {
 	Cost float64 `json:"cost"`
 }
 
-func GetRecipeHandler(recipeGetter rpst.RecipeGetter) http.HandlerFunc {
+func GetRecipeHandler(recipeGetter recipes.RecipeGetter) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		recipeIDstr := r.PathValue("recipeID")
 		recipeID, err := strconv.ParseInt(recipeIDstr, 10, 64)
@@ -22,7 +23,7 @@ func GetRecipeHandler(recipeGetter rpst.RecipeGetter) http.HandlerFunc {
 		}
 
 		recipe, err := recipeGetter.GetRecipe(r.Context(), recipeID)
-		if err == rpst.ErrNotFound {
+		if err == errs.ErrNotFound {
 			w.WriteHeader(http.StatusNotFound)
 			return
 		} else if err != nil {

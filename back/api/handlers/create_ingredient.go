@@ -1,33 +1,33 @@
 package handlers
 
 import (
-	"costly/core/ports/logger"
-	"costly/core/usecases"
+	"costly/core/components/ingredients"
+	"costly/core/components/logger"
 	"net/http"
 )
 
-func parseIngredientOptions(r *http.Request) (usecases.CreateIngredientOptions, error) {
-	createIngredientOpts := usecases.CreateIngredientOptions{}
+func parseIngredientOptions(r *http.Request) (ingredients.CreateIngredientOptions, error) {
+	createIngredientOpts := ingredients.CreateIngredientOptions{}
 	if err := UnmarshallJSONBody(r, &createIngredientOpts); err != nil {
-		return usecases.CreateIngredientOptions{}, ErrBadJson
+		return ingredients.CreateIngredientOptions{}, ErrBadJson
 	}
 
 	if createIngredientOpts.Name == "" {
-		return usecases.CreateIngredientOptions{}, ErrBadName
+		return ingredients.CreateIngredientOptions{}, ErrBadName
 	}
 
 	if createIngredientOpts.Unit != "gr" {
-		return usecases.CreateIngredientOptions{}, ErrBadUnit
+		return ingredients.CreateIngredientOptions{}, ErrBadUnit
 	}
 
 	if createIngredientOpts.Price <= 0 {
-		return usecases.CreateIngredientOptions{}, ErrBadPrice
+		return ingredients.CreateIngredientOptions{}, ErrBadPrice
 	}
 
 	return createIngredientOpts, nil
 }
 
-func CreateIngredientHandler(ingredientCreator usecases.IngredientCreator) http.HandlerFunc {
+func CreateIngredientHandler(ingredientCreator ingredients.IngredientCreator) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		defer r.Body.Close()
 

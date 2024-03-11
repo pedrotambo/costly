@@ -3,12 +3,13 @@ package handlers_test
 import (
 	"context"
 	"costly/api/handlers"
+	"costly/core/components/clock"
+	"costly/core/components/database"
+	"costly/core/components/ingredients"
+	"costly/core/components/logger"
+	"costly/core/components/recipes"
+	"costly/core/mocks"
 	"costly/core/model"
-	"costly/core/ports/clock"
-	"costly/core/ports/database"
-	"costly/core/ports/logger"
-	"costly/core/ports/rpst"
-	"costly/core/usecases"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -21,12 +22,9 @@ import (
 func runGetRecipeHandler(t *testing.T, clock clock.Clock, recipeIDstr string) *httptest.ResponseRecorder {
 	logger, _ := logger.New("debug")
 	db, _ := database.NewFromDatasource(":memory:", logger)
-	useCases := usecases.New(&usecases.Ports{
-		Logger:     logger,
-		Repository: rpst.New(db, clock, logger),
-		Clock:      clock,
-	})
-	_, err := useCases.CreateIngredient(context.Background(), usecases.CreateIngredientOptions{
+	ingredientComponent := ingredients.New(db, clock, logger)
+	recipeComponent := recipes.New(db, clock, logger, ingredientComponent)
+	_, err := ingredientComponent.CreateIngredient(context.Background(), ingredients.CreateIngredientOptions{
 		Name:  "ingr1",
 		Price: 1.50,
 		Unit:  model.Gram,
@@ -36,7 +34,7 @@ func runGetRecipeHandler(t *testing.T, clock clock.Clock, recipeIDstr string) *h
 		t.Fatal()
 	}
 
-	_, err = useCases.CreateIngredient(context.Background(), usecases.CreateIngredientOptions{
+	_, err = ingredientComponent.CreateIngredient(context.Background(), ingredients.CreateIngredientOptions{
 		Name:  "ingr2",
 		Price: 2.50,
 		Unit:  model.Gram,
@@ -46,9 +44,9 @@ func runGetRecipeHandler(t *testing.T, clock clock.Clock, recipeIDstr string) *h
 		t.Fatal()
 	}
 
-	useCases.CreateRecipe(context.Background(), usecases.CreateRecipeOptions{
+	recipeComponent.CreateRecipe(context.Background(), recipes.CreateRecipeOptions{
 		Name: "recipe1",
-		Ingredients: []usecases.RecipeIngredientOptions{
+		Ingredients: []recipes.RecipeIngredientOptions{
 			{
 				ID:    1,
 				Units: 1,
@@ -60,7 +58,7 @@ func runGetRecipeHandler(t *testing.T, clock clock.Clock, recipeIDstr string) *h
 		},
 	})
 
-	handler := handlers.GetRecipeHandler(useCases)
+	handler := handlers.GetRecipeHandler(recipeComponent)
 
 	req, err := http.NewRequest("GET", "/recipes/"+recipeIDstr, nil)
 	if err != nil {
@@ -75,7 +73,7 @@ func runGetRecipeHandler(t *testing.T, clock clock.Clock, recipeIDstr string) *h
 }
 
 func TestHandleGetRecipe(t *testing.T) {
-	clock := new(clockMock)
+	clock := new(mocks.ClockMock)
 	now := time.UnixMilli(12345).UTC()
 	clock.On("Now").Return(now)
 

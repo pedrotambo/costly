@@ -1,13 +1,14 @@
 package handlers
 
 import (
-	"costly/core/ports/logger"
-	"costly/core/ports/rpst"
+	"costly/core/components/ingredients"
+	"costly/core/components/logger"
+	"costly/core/errs"
 	"net/http"
 	"strconv"
 )
 
-func GetIngredientHandler(ingredientGetter rpst.IngredientGetter) http.HandlerFunc {
+func GetIngredientHandler(ingredientGetter ingredients.IngredientGetter) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ingredientIDstr := r.PathValue("ingredientID")
 		ingredientID, err := strconv.ParseInt(ingredientIDstr, 10, 64)
@@ -16,7 +17,7 @@ func GetIngredientHandler(ingredientGetter rpst.IngredientGetter) http.HandlerFu
 		}
 
 		ingredient, err := ingredientGetter.GetIngredient(r.Context(), ingredientID)
-		if err == rpst.ErrNotFound {
+		if err == errs.ErrNotFound {
 			w.WriteHeader(http.StatusNotFound)
 			return
 		} else if err != nil {

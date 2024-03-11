@@ -2,10 +2,11 @@ package rpst
 
 import (
 	"context"
+	"costly/core/components/clock"
+	"costly/core/components/database"
+	"costly/core/components/logger"
+	"costly/core/errs"
 	"costly/core/model"
-	"costly/core/ports/clock"
-	"costly/core/ports/database"
-	"costly/core/ports/logger"
 	"database/sql"
 )
 
@@ -37,14 +38,14 @@ type ingredientRepository struct {
 	logger logger.Logger
 }
 
-func NewIngredientRepository(db database.Database, clock clock.Clock, logger logger.Logger) IngredientRepository {
+func New(db database.Database, clock clock.Clock, logger logger.Logger) IngredientRepository {
 	return &ingredientRepository{db, clock, logger}
 }
 
 func (r *ingredientRepository) GetIngredient(ctx context.Context, id int64) (model.Ingredient, error) {
 	ingredient, err := queryRowAndMap(ctx, r.db, mapToIngredient, "SELECT * FROM ingredient WHERE id = ?", id)
 	if err == sql.ErrNoRows {
-		return model.Ingredient{}, ErrNotFound
+		return model.Ingredient{}, errs.ErrNotFound
 	} else if err != nil {
 		return model.Ingredient{}, err
 	}
@@ -82,8 +83,8 @@ func (r *ingredientRepository) UpdateStock(ctx context.Context, ingredientID int
 	if err := r.db.WithTx(ctx, func(tx database.TX) error {
 		updatedIngredient, err := queryRowAndMap(ctx, tx, mapToIngredient, "UPDATE ingredient SET units_in_stock = units_in_stock + ?, price = ?, last_modified = ? WHERE id = ? RETURNING *", newStockOptions.NewUnits, newStockOptions.Price, now, ingredientID)
 		if err == sql.ErrNoRows {
-			r.logger.Error(ErrNotFound, "error updating unexistent ingredient")
-			return ErrNotFound
+			r.logger.Error(errs.ErrNotFound, "error updating unexistent ingredient")
+			return errs.ErrNotFound
 		} else if err != nil {
 			r.logger.Error(err, "error updating ingredient")
 			return err
@@ -114,7 +115,7 @@ func (r *ingredientRepository) SaveIngredientStock(ctx context.Context, ingredie
 			return err
 		} else if rows == 0 {
 			r.logger.Error(err, "error updating ingredient stock: inexisten ingredient")
-			return ErrNotFound
+			return errs.ErrNotFound
 		}
 
 		result, err := tx.ExecContext(ctx, "INSERT INTO stock_history (ingredient_id, units, price, created_at) VALUES (?, ?, ?, ?)", ingredientStock.IngredientID, ingredientStock.Units, ingredientStock.Price, ingredientStock.CreatedAt)
@@ -151,8 +152,7 @@ func (r *ingredientRepository) UpdateIngredient(ctx context.Context, ingredientI
 	updateFunc(&ingredient)
 	_, err = queryRowAndMap(ctx, r.db, mapToIngredient, "UPDATE ingredient SET name = ?, unit = ?, price = ?, last_modified = ? WHERE id = ? RETURNING *", ingredient.Name, ingredient.Unit, ingredient.Price, ingredient.LastModified, ingredient.ID)
 	if err == sql.ErrNoRows {
-		r.logger.Error(ErrNotFound, "error updating unexistent ingredient")
-		return ErrNotFound
+		return errs.ErrNotFound
 	} else if err != nil {
 		r.logger.Error(err, "error updating ingredient")
 		return err

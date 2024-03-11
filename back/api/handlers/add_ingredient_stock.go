@@ -1,31 +1,31 @@
 package handlers
 
 import (
-	"costly/core/ports/logger"
-	"costly/core/ports/rpst"
-	"costly/core/usecases"
+	"costly/core/components/ingredients"
+	"costly/core/components/logger"
+	"costly/core/errs"
 	"net/http"
 	"strconv"
 )
 
-func parseIngredientStockOptions(r *http.Request) (usecases.IngredientStockOptions, error) {
-	opts := usecases.IngredientStockOptions{}
+func parseIngredientStockOptions(r *http.Request) (ingredients.IngredientStockOptions, error) {
+	opts := ingredients.IngredientStockOptions{}
 	if err := UnmarshallJSONBody(r, &opts); err != nil {
-		return usecases.IngredientStockOptions{}, ErrBadJson
+		return ingredients.IngredientStockOptions{}, ErrBadJson
 	}
 
 	if opts.Units <= 0 {
-		return usecases.IngredientStockOptions{}, ErrBadStockUnits
+		return ingredients.IngredientStockOptions{}, ErrBadStockUnits
 	}
 
 	if opts.Price <= 0 {
-		return usecases.IngredientStockOptions{}, ErrBadPrice
+		return ingredients.IngredientStockOptions{}, ErrBadPrice
 	}
 
 	return opts, nil
 }
 
-func AddIngredientStockHandler(ingredientStockAdder usecases.IngredientStockAdder) http.HandlerFunc {
+func AddIngredientStockHandler(ingredientStockAdder ingredients.IngredientStockAdder) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ingredientIDstr := r.PathValue("ingredientID")
 		ingredientID, err := strconv.ParseInt(ingredientIDstr, 10, 64)
@@ -41,7 +41,7 @@ func AddIngredientStockHandler(ingredientStockAdder usecases.IngredientStockAdde
 		}
 
 		ingredientStock, err := ingredientStockAdder.AddIngredientStock(r.Context(), int64(ingredientID), ingredientStockOptions)
-		if err == rpst.ErrNotFound {
+		if err == errs.ErrNotFound {
 			w.WriteHeader(http.StatusNotFound)
 			return
 		} else if err != nil {

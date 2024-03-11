@@ -1,9 +1,9 @@
 package handlers
 
 import (
-	"costly/core/ports/logger"
-	"costly/core/ports/rpst"
-	"costly/core/usecases"
+	"costly/core/components/logger"
+	"costly/core/components/recipes"
+	"costly/core/errs"
 	"net/http"
 	"strconv"
 )
@@ -25,7 +25,7 @@ type recipeSalesOpts struct {
 	SoldUnits int `json:"sold_units"`
 }
 
-func AddRecipeSalesHandler(recipeSalesAddres usecases.RecipeSalesAdder) http.HandlerFunc {
+func AddRecipeSalesHandler(recipeSalesAddres recipes.RecipeSalesAdder) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		recipeIDStr := r.PathValue("recipeID")
 		recipeID, err := strconv.ParseInt(recipeIDStr, 10, 64)
@@ -41,7 +41,7 @@ func AddRecipeSalesHandler(recipeSalesAddres usecases.RecipeSalesAdder) http.Han
 		}
 
 		ingredientStock, err := recipeSalesAddres.AddRecipeSales(r.Context(), recipeID, opts.SoldUnits)
-		if err == rpst.ErrNotFound {
+		if err == errs.ErrNotFound {
 			w.WriteHeader(http.StatusNotFound)
 			return
 		} else if err != nil {

@@ -2,11 +2,12 @@ package api
 
 import (
 	"context"
-	"costly/core/ports/clock"
-	"costly/core/ports/database"
-	"costly/core/ports/logger"
-	"costly/core/ports/rpst"
-	"costly/core/usecases"
+	comps "costly/core/components"
+	"costly/core/components/clock"
+	"costly/core/components/database"
+	"costly/core/components/ingredients"
+	"costly/core/components/logger"
+	"costly/core/components/recipes"
 	"fmt"
 	"net/http"
 	"os"
@@ -19,26 +20,26 @@ type Server interface {
 }
 
 type server struct {
-	httpServer   *http.Server
-	portAdapters *usecases.Ports
+	httpServer *http.Server
+	logger     logger.Logger
 }
 
 func NewServer(config *Config) Server {
-	portAdapters, err := initPortAdapters(config)
+	components, err := initComponents(config)
+	logger := components.Logger
 	if err != nil {
 		fmt.Printf("Could not initialize components. Err: %s\n", err)
 		os.Exit(1)
 	}
-	logger := portAdapters.Logger
 	loggerMiddleware := NewLoggerMiddleware(logger)
 	authMiddleware := NewAuthMiddleware([]byte(config.AuthSecret), logger)
-	router := NewRouter(usecases.New(portAdapters), authMiddleware, loggerMiddleware)
+	router := NewRouter(components, authMiddleware, loggerMiddleware)
 	return &server{
 		httpServer: &http.Server{
 			Addr:    config.ListenAddress,
 			Handler: router,
 		},
-		portAdapters: portAdapters,
+		logger: logger,
 	}
 }
 
@@ -46,7 +47,7 @@ func (s *server) Start() {
 	done := make(chan bool, 1)
 	signalChannel := make(chan os.Signal, 1)
 	signal.Notify(signalChannel, syscall.SIGINT, syscall.SIGTERM)
-	logger := s.portAdapters.Logger
+	logger := s.logger
 	logger.Info("Running server...")
 
 	go func() {
@@ -71,22 +72,25 @@ func (s *server) Start() {
 	fmt.Println(done)
 }
 
-func initPortAdapters(config *Config) (*usecases.Ports, error) {
+func initComponents(config *Config) (*comps.Components, error) {
 	logger, err := logger.New(config.LogLevel)
 	if err != nil {
 		fmt.Printf("Could not create logger. Err: %s\n", err)
-		os.Exit(1)
+		return &comps.Components{}, err
 	}
 	database, err := database.New(config.Database.ConnectionString, logger)
 	if err != nil {
 		logger.Error(err, "could not initialize database")
-		os.Exit(1)
+		return &comps.Components{}, err
 	}
 	clock := clock.New()
-	repository := rpst.New(database, clock, logger)
-	return &usecases.Ports{
-		Logger:     logger,
-		Repository: repository,
-		Clock:      clock,
+	ingredientComponent := ingredients.New(database, clock, logger)
+	recipeComponent := recipes.New(database, clock, logger, ingredientComponent)
+	return &comps.Components{
+		IngredientComponent: ingredientComponent,
+		RecipeComponent:     recipeComponent,
+		Logger:              logger,
+		Database:            database,
+		Clock:               clock,
 	}, nil
 }

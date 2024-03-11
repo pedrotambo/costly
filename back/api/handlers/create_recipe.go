@@ -1,29 +1,29 @@
 package handlers
 
 import (
-	"costly/core/ports/logger"
-	"costly/core/ports/rpst"
-	"costly/core/usecases"
+	"costly/core/components/logger"
+	"costly/core/components/recipes"
+	"costly/core/errs"
 	"net/http"
 )
 
-func parseRecipeOptions(r *http.Request) (usecases.CreateRecipeOptions, error) {
-	createRecipeOpts := usecases.CreateRecipeOptions{}
+func parseRecipeOptions(r *http.Request) (recipes.CreateRecipeOptions, error) {
+	createRecipeOpts := recipes.CreateRecipeOptions{}
 	if err := UnmarshallJSONBody(r, &createRecipeOpts); err != nil {
-		return usecases.CreateRecipeOptions{}, ErrBadJson
+		return recipes.CreateRecipeOptions{}, ErrBadJson
 	}
 	if createRecipeOpts.Name == "" {
-		return usecases.CreateRecipeOptions{}, ErrBadName
+		return recipes.CreateRecipeOptions{}, ErrBadName
 	}
 
 	if len(createRecipeOpts.Ingredients) == 0 {
-		return usecases.CreateRecipeOptions{}, ErrBadIngrs
+		return recipes.CreateRecipeOptions{}, ErrBadIngrs
 	}
 
 	return createRecipeOpts, nil
 }
 
-func CreateRecipeHandler(recipeCreator usecases.RecipeCreator) http.HandlerFunc {
+func CreateRecipeHandler(recipeCreator recipes.RecipeCreator) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		defer r.Body.Close()
 
@@ -34,7 +34,7 @@ func CreateRecipeHandler(recipeCreator usecases.RecipeCreator) http.HandlerFunc 
 		}
 
 		recipe, err := recipeCreator.CreateRecipe(r.Context(), createRecipeOptions)
-		if err == rpst.ErrBadOpts {
+		if err == errs.ErrBadOpts {
 			w.WriteHeader(http.StatusBadRequest)
 			return
 		} else if err != nil {

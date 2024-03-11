@@ -2,10 +2,11 @@ package rpst
 
 import (
 	"context"
+	"costly/core/components/clock"
+	"costly/core/components/database"
+	"costly/core/components/logger"
+	"costly/core/errs"
 	"costly/core/model"
-	"costly/core/ports/clock"
-	"costly/core/ports/database"
-	"costly/core/ports/logger"
 	"database/sql"
 	"time"
 )
@@ -38,14 +39,14 @@ type recipeDB struct {
 	lastModified time.Time
 }
 
-func NewRecipeRepository(db database.Database, clock clock.Clock, logger logger.Logger) RecipeRepository {
+func New(db database.Database, clock clock.Clock, logger logger.Logger) RecipeRepository {
 	return &recipeRepository{db, clock, logger}
 }
 
 func (r *recipeRepository) GetRecipe(ctx context.Context, id int64) (model.Recipe, error) {
 	recipeDB, err := queryRowAndMap(ctx, r.db, mapToRecipeDB, "SELECT * FROM recipe WHERE id = ?", id)
 	if err == sql.ErrNoRows {
-		return model.Recipe{}, ErrNotFound
+		return model.Recipe{}, errs.ErrNotFound
 	} else if err != nil {
 		return model.Recipe{}, err
 	}
@@ -65,7 +66,7 @@ func (r *recipeRepository) GetRecipe(ctx context.Context, id int64) (model.Recip
 func getRecipe(ctx context.Context, tx database.TX, id int64) (model.Recipe, error) {
 	recipeDB, err := queryRowAndMap(ctx, tx, mapToRecipeDB, "SELECT * FROM recipe WHERE id = ?", id)
 	if err == sql.ErrNoRows {
-		return model.Recipe{}, ErrNotFound
+		return model.Recipe{}, errs.ErrNotFound
 	} else if err != nil {
 		return model.Recipe{}, err
 	}
@@ -145,7 +146,7 @@ func (r *recipeRepository) SaveRecipeSales(ctx context.Context, recipeSales *mod
 			if rows, err := res.RowsAffected(); err != nil {
 				return err
 			} else if rows == 0 {
-				return ErrNotFound
+				return errs.ErrNotFound
 			}
 		}
 

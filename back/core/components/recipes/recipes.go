@@ -1,16 +1,22 @@
-package usecases
+package recipes
 
 import (
 	"context"
+	"costly/core/components/clock"
+	"costly/core/components/database"
+	"costly/core/components/ingredients"
+	"costly/core/components/logger"
+	"costly/core/components/recipes/internal/rpst"
+	"costly/core/errs"
 	"costly/core/model"
-	"costly/core/ports/clock"
-	"costly/core/ports/rpst"
 	"fmt"
 )
 
-type RecipeUseCases interface {
+type RecipeComponent interface {
 	RecipeCreator
 	RecipeSalesAdder
+	RecipeGetter
+	RecipesGetter
 }
 
 type RecipeIngredientOptions struct {
@@ -28,14 +34,18 @@ type RecipeCreator interface {
 }
 
 type recipeUseCases struct {
-	repository rpst.Repository
-	clock      clock.Clock
+	repository  rpst.RecipeRepository
+	clock       clock.Clock
+	ingredients ingredients.IngredientComponent
+	rpst.RecipeRepository
 }
 
-func NewRecipeUseCases(repository rpst.Repository, clock clock.Clock) RecipeUseCases {
+func New(database database.Database, clock clock.Clock, logger logger.Logger, ingredients ingredients.IngredientComponent) RecipeComponent {
+	recipeRepository := rpst.New(database, clock, logger)
 	return &recipeUseCases{
-		repository: repository,
-		clock:      clock,
+		repository:  recipeRepository,
+		clock:       clock,
+		ingredients: ingredients,
 	}
 }
 
@@ -43,8 +53,8 @@ func (cr *recipeUseCases) CreateRecipe(ctx context.Context, recipeOpts CreateRec
 	now := cr.clock.Now()
 	recipeIngredients := []model.RecipeIngredient{}
 	for _, recipeIngredient := range recipeOpts.Ingredients {
-		ingredient, err := cr.repository.GetIngredient(ctx, recipeIngredient.ID)
-		if err == rpst.ErrNotFound {
+		ingredient, err := cr.ingredients.GetIngredient(ctx, recipeIngredient.ID)
+		if err == errs.ErrNotFound {
 			return &model.Recipe{}, fmt.Errorf("failed to create recipe: unexistent ingredient with ID %d", recipeIngredient.ID)
 		} else if err != nil {
 			return &model.Recipe{}, err
@@ -97,4 +107,20 @@ func (cr *recipeUseCases) AddRecipeSales(ctx context.Context, recipeID int64, so
 	}
 
 	return recipeSales, nil
+}
+
+type RecipeGetter interface {
+	GetRecipe(ctx context.Context, id int64) (model.Recipe, error)
+}
+
+func (cr *recipeUseCases) GetRecipe(ctx context.Context, id int64) (model.Recipe, error) {
+	return cr.repository.GetRecipe(ctx, id)
+}
+
+type RecipesGetter interface {
+	GetRecipes(ctx context.Context) ([]model.Recipe, error)
+}
+
+func (cr *recipeUseCases) GetRecipes(ctx context.Context) ([]model.Recipe, error) {
+	return cr.repository.GetRecipes(ctx)
 }

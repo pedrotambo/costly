@@ -2,11 +2,12 @@ package rpst_test
 
 import (
 	"context"
+	"costly/core/components/clock"
+	"costly/core/components/database"
+	"costly/core/components/ingredients/internal/rpst"
+	"costly/core/components/logger"
+	"costly/core/errs"
 	"costly/core/model"
-	"costly/core/ports/clock"
-	"costly/core/ports/database"
-	"costly/core/ports/logger"
-	"costly/core/ports/rpst"
 	"database/sql"
 	"errors"
 	"testing"
@@ -24,7 +25,7 @@ func TestGetIngredient(t *testing.T) {
 	t.Run("should get correct ingredient if existent", func(t *testing.T) {
 		db, _ := database.NewFromDatasource(":memory:", logger)
 
-		ingredientRepository := rpst.NewIngredientRepository(db, clock, logger)
+		ingredientRepository := rpst.New(db, clock, logger)
 		ctx := context.Background()
 		now := clock.Now()
 		ingredient := &model.Ingredient{
@@ -59,12 +60,12 @@ func TestGetIngredient(t *testing.T) {
 
 	t.Run("should return error when requesting an inexistent ingredient", func(t *testing.T) {
 		db, _ := database.NewFromDatasource(":memory:", logger)
-		ingredientRepository := rpst.NewIngredientRepository(db, clock, logger)
+		ingredientRepository := rpst.New(db, clock, logger)
 
 		_, err := ingredientRepository.GetIngredient(context.Background(), 123)
 
 		require.Error(t, err)
-		assert.Equal(t, err, rpst.ErrNotFound)
+		assert.Equal(t, err, errs.ErrNotFound)
 	})
 }
 
@@ -76,7 +77,7 @@ func TestGetIngredients(t *testing.T) {
 	t.Run("should get list of existent ingredients", func(t *testing.T) {
 		db, _ := database.NewFromDatasource(":memory:", logger)
 
-		ingredientRepository := rpst.NewIngredientRepository(db, clock, logger)
+		ingredientRepository := rpst.New(db, clock, logger)
 		ctx := context.Background()
 		now := clock.Now()
 		ingredient := &model.Ingredient{
@@ -118,7 +119,7 @@ func TestAddIngredientStock(t *testing.T) {
 	t.Run("should add ingredient units in stock correctly", func(t *testing.T) {
 		db, _ := database.NewFromDatasource(":memory:", logger)
 
-		ingredientRepository := rpst.NewIngredientRepository(db, clock, logger)
+		ingredientRepository := rpst.New(db, clock, logger)
 		ctx := context.Background()
 		now := clock.Now()
 		ingredient := &model.Ingredient{
@@ -157,7 +158,7 @@ func TestAddIngredientStock(t *testing.T) {
 	t.Run("when adding ingredient stock should update price correctly", func(t *testing.T) {
 		db, _ := database.NewFromDatasource(":memory:", logger)
 
-		ingredientRepository := rpst.NewIngredientRepository(db, clock, logger)
+		ingredientRepository := rpst.New(db, clock, logger)
 		ctx := context.Background()
 		now := clock.Now()
 		ingredient := &model.Ingredient{
@@ -195,7 +196,7 @@ func TestAddIngredientStock(t *testing.T) {
 
 	t.Run("adding stock of inexistent ingredient should return error", func(t *testing.T) {
 		db, _ := database.NewFromDatasource(":memory:", logger)
-		ingredientRepository := rpst.NewIngredientRepository(db, clock, logger)
+		ingredientRepository := rpst.New(db, clock, logger)
 		ctx := context.Background()
 		now := clock.Now()
 		ingredient := &model.Ingredient{
@@ -227,12 +228,12 @@ func TestAddIngredientStock(t *testing.T) {
 			CreatedAt:    clock.Now(),
 		})
 		require.Error(t, err)
-		assert.Equal(t, err, rpst.ErrNotFound)
+		assert.Equal(t, err, errs.ErrNotFound)
 	})
 
 	t.Run("add ingredient stock should return error if query returns error", func(t *testing.T) {
 		db := new(databaseMock)
-		ingredientRepository := rpst.NewIngredientRepository(db, clock, logger)
+		ingredientRepository := rpst.New(db, clock, logger)
 		err := ingredientRepository.SaveIngredientStock(context.Background(), &model.IngredientStock{
 			ID:           -1,
 			IngredientID: 1,

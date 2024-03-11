@@ -2,8 +2,8 @@ package rpst
 
 import (
 	"context"
+	"costly/core/components/database"
 	"costly/core/model"
-	"costly/core/ports/database"
 )
 
 type rowMapper[T any] func(rowScanner database.RowScanner) (T, error)
@@ -33,22 +33,6 @@ func mapToIngredient(rowScanner database.RowScanner) (model.Ingredient, error) {
 	var ingredient model.Ingredient
 	err := rowScanner.Scan(&ingredient.ID, &ingredient.Name, &ingredient.Unit, &ingredient.Price, &ingredient.CreatedAt, &ingredient.LastModified, &ingredient.UnitsInStock)
 	return ingredient, err
-}
-
-func mapToRecipeIngredient(rowScanner database.RowScanner) (model.RecipeIngredient, error) {
-	var ingredient model.Ingredient
-	var recipeUnits int
-	err := rowScanner.Scan(&ingredient.ID, &ingredient.Name, &ingredient.Unit, &ingredient.Price, &ingredient.CreatedAt, &ingredient.LastModified, &ingredient.UnitsInStock, &recipeUnits)
-	return model.RecipeIngredient{
-		Ingredient: ingredient,
-		Units:      recipeUnits,
-	}, err
-}
-
-func mapToRecipeDB(rowScanner database.RowScanner) (recipeDB, error) {
-	var recipe recipeDB
-	err := rowScanner.Scan(&recipe.id, &recipe.name, &recipe.createdAt, &recipe.lastModified)
-	return recipe, err
 }
 
 func mapToIngredientStock(rowScanner database.RowScanner) (model.IngredientStock, error) {

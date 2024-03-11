@@ -3,12 +3,12 @@ package handlers_test
 import (
 	"context"
 	"costly/api/handlers"
+	"costly/core/components/clock"
+	"costly/core/components/database"
+	"costly/core/components/ingredients"
+	"costly/core/components/logger"
+	"costly/core/mocks"
 	"costly/core/model"
-	"costly/core/ports/clock"
-	"costly/core/ports/database"
-	"costly/core/ports/logger"
-	"costly/core/ports/rpst"
-	"costly/core/usecases"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -18,16 +18,15 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func runGetIngredientsHandler(t *testing.T, clock clock.Clock, ingrOpts []usecases.CreateIngredientOptions) *httptest.ResponseRecorder {
+func runGetIngredientsHandler(t *testing.T, clock clock.Clock, ingrOpts []ingredients.CreateIngredientOptions) *httptest.ResponseRecorder {
 	logger, _ := logger.New("debug")
 	db, _ := database.NewFromDatasource(":memory:", logger)
-	repo := rpst.NewIngredientRepository(db, clock, logger)
-	ingredientUsecases := usecases.NewIngredientUseCases(repo, clock)
+	ingredientComponent := ingredients.New(db, clock, logger)
 	for _, opts := range ingrOpts {
-		ingredientUsecases.CreateIngredient(context.Background(), opts)
+		ingredientComponent.CreateIngredient(context.Background(), opts)
 	}
 
-	handler := handlers.GetIngredientsHandler(repo)
+	handler := handlers.GetIngredientsHandler(ingredientComponent)
 
 	req, err := http.NewRequest("GET", "/ingredients", nil)
 	if err != nil {
@@ -42,19 +41,19 @@ func runGetIngredientsHandler(t *testing.T, clock clock.Clock, ingrOpts []usecas
 }
 
 func TestHandleGetIngredients(t *testing.T) {
-	clock := new(clockMock)
+	clock := new(mocks.ClockMock)
 	now := time.UnixMilli(12345).UTC()
 	clock.On("Now").Return(now)
 
 	testCases := []struct {
 		name        string
-		ingredients []usecases.CreateIngredientOptions
+		ingredients []ingredients.CreateIngredientOptions
 		expected    string
 		statusCode  int
 	}{
 		{
 			name: "should get ingredients",
-			ingredients: []usecases.CreateIngredientOptions{
+			ingredients: []ingredients.CreateIngredientOptions{
 				{
 					Name:  "ingr1",
 					Price: 1.5,
@@ -90,7 +89,7 @@ func TestHandleGetIngredients(t *testing.T) {
 		},
 		{
 			name:        "should get empty ingredients",
-			ingredients: []usecases.CreateIngredientOptions{},
+			ingredients: []ingredients.CreateIngredientOptions{},
 			expected:    `[]`,
 			statusCode:  http.StatusOK,
 		},

@@ -1,7 +1,7 @@
 package api
 
 import (
-	"costly/core/ports/logger"
+	"costly/core/components/logger"
 	"net/http"
 
 	"github.com/go-chi/jwtauth"

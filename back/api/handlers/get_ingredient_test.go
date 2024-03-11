@@ -3,12 +3,12 @@ package handlers_test
 import (
 	"context"
 	"costly/api/handlers"
+	"costly/core/components/clock"
+	"costly/core/components/database"
+	"costly/core/components/ingredients"
+	"costly/core/components/logger"
+	"costly/core/mocks"
 	"costly/core/model"
-	"costly/core/ports/clock"
-	"costly/core/ports/database"
-	"costly/core/ports/logger"
-	"costly/core/ports/rpst"
-	"costly/core/usecases"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -21,14 +21,13 @@ import (
 func runGetIngredientHandler(t *testing.T, clock clock.Clock, ingredientIDstr string) *httptest.ResponseRecorder {
 	logger, _ := logger.New("debug")
 	db, _ := database.NewFromDatasource(":memory:", logger)
-	repo := rpst.NewIngredientRepository(db, clock, logger)
-	ingredientUsecases := usecases.NewIngredientUseCases(repo, clock)
-	ingredientUsecases.CreateIngredient(context.Background(), usecases.CreateIngredientOptions{
+	ingredientComponent := ingredients.New(db, clock, logger)
+	ingredientComponent.CreateIngredient(context.Background(), ingredients.CreateIngredientOptions{
 		Name:  "ingredientName",
 		Price: 12.43,
 		Unit:  model.Gram,
 	})
-	handler := handlers.GetIngredientHandler(repo)
+	handler := handlers.GetIngredientHandler(ingredientComponent)
 
 	req, err := http.NewRequest("GET", "/ingredients/"+ingredientIDstr, nil)
 	if err != nil {
@@ -43,7 +42,7 @@ func runGetIngredientHandler(t *testing.T, clock clock.Clock, ingredientIDstr st
 }
 
 func TestHandleGetIngredient(t *testing.T) {
-	clock := new(clockMock)
+	clock := new(mocks.ClockMock)
 	now := time.UnixMilli(12345).UTC()
 	clock.On("Now").Return(now)
 

@@ -1,13 +1,13 @@
-package usecases_test
+package ingredients_test
 
 import (
 	"context"
+	"costly/core/components/clock"
+	"costly/core/components/database"
+	"costly/core/components/ingredients"
+	"costly/core/components/logger"
+	"costly/core/mocks"
 	"costly/core/model"
-	"costly/core/ports/clock"
-	"costly/core/ports/database"
-	"costly/core/ports/logger"
-	"costly/core/ports/rpst"
-	"costly/core/usecases"
 	"testing"
 	"time"
 
@@ -22,13 +22,12 @@ func TestCreateIngredient(t *testing.T) {
 
 	t.Run("should create an ingredient if non existent", func(t *testing.T) {
 		db, _ := database.NewFromDatasource(":memory:", logger)
-		clockMock := new(clockMock)
+		clockMock := new(mocks.ClockMock)
 		now := time.UnixMilli(12345).UTC()
 		clockMock.On("Now").Return(now)
 
-		ingredientRepository := rpst.NewIngredientRepository(db, clockMock, logger)
-		ingredientUsecases := usecases.NewIngredientUseCases(ingredientRepository, clockMock)
-		ingredient, err := ingredientUsecases.CreateIngredient(context.Background(), usecases.CreateIngredientOptions{
+		ingredientComponent := ingredients.New(db, clockMock, logger)
+		ingredient, err := ingredientComponent.CreateIngredient(context.Background(), ingredients.CreateIngredientOptions{
 			Name:  "name",
 			Price: 10.0,
 			Unit:  model.Gram,
@@ -49,16 +48,15 @@ func TestCreateIngredient(t *testing.T) {
 	t.Run("should fail to create an ingredient if existent", func(t *testing.T) {
 		db, _ := database.NewFromDatasource(":memory:", logger)
 
-		ingredientRepository := rpst.NewIngredientRepository(db, clock, logger)
-		ingredientUsecases := usecases.NewIngredientUseCases(ingredientRepository, clock)
+		ingredientComponent := ingredients.New(db, clock, logger)
 		existentIngredientName := "name"
-		ingredientUsecases.CreateIngredient(context.Background(), usecases.CreateIngredientOptions{
+		ingredientComponent.CreateIngredient(context.Background(), ingredients.CreateIngredientOptions{
 			Name:  existentIngredientName,
 			Price: 10.0,
 			Unit:  model.Gram,
 		})
 
-		_, err := ingredientUsecases.CreateIngredient(context.Background(), usecases.CreateIngredientOptions{
+		_, err := ingredientComponent.CreateIngredient(context.Background(), ingredients.CreateIngredientOptions{
 			Name:  existentIngredientName,
 			Price: 1123450.0,
 			Unit:  model.Kilogram,
@@ -69,16 +67,15 @@ func TestCreateIngredient(t *testing.T) {
 	t.Run("should assign different IDs to different ingredients", func(t *testing.T) {
 		db, _ := database.NewFromDatasource(":memory:", logger)
 
-		ingredientRepository := rpst.NewIngredientRepository(db, clock, logger)
-		ingredientUsecases := usecases.NewIngredientUseCases(ingredientRepository, clock)
+		ingredientComponent := ingredients.New(db, clock, logger)
 		ctx := context.Background()
-		ing1, err := ingredientUsecases.CreateIngredient(ctx, usecases.CreateIngredientOptions{
+		ing1, err := ingredientComponent.CreateIngredient(ctx, ingredients.CreateIngredientOptions{
 			Name:  "ing1",
 			Price: 10.0,
 			Unit:  model.Gram,
 		})
 		require.NoError(t, err)
-		ing2, err := ingredientUsecases.CreateIngredient(ctx, usecases.CreateIngredientOptions{
+		ing2, err := ingredientComponent.CreateIngredient(ctx, ingredients.CreateIngredientOptions{
 			Name:  "ing2",
 			Price: 1231231231.0,
 			Unit:  model.Gram,
@@ -96,25 +93,24 @@ func TestEditIngredient(t *testing.T) {
 	t.Run("should edit ingredient correctly", func(t *testing.T) {
 		db, _ := database.NewFromDatasource(":memory:", logger)
 
-		ingredientRepository := rpst.NewIngredientRepository(db, clock, logger)
-		ingredientUsecases := usecases.NewIngredientUseCases(ingredientRepository, clock)
+		ingredientComponent := ingredients.New(db, clock, logger)
 		ctx := context.Background()
-		ing1, err := ingredientUsecases.CreateIngredient(ctx, usecases.CreateIngredientOptions{
+		ing1, err := ingredientComponent.CreateIngredient(ctx, ingredients.CreateIngredientOptions{
 			Name:  "ing1",
 			Price: 10.0,
 			Unit:  model.Gram,
 		})
 		require.NoError(t, err)
 
-		newIngredientOpts := usecases.CreateIngredientOptions{
+		newIngredientOpts := ingredients.CreateIngredientOptions{
 			Name:  "modifiedIngr1",
 			Price: ing1.Price + 10.0,
 			Unit:  model.Kilogram,
 		}
-		err = ingredientUsecases.EditIngredient(ctx, ing1.ID, newIngredientOpts)
+		err = ingredientComponent.EditIngredient(ctx, ing1.ID, newIngredientOpts)
 		require.NoError(t, err)
 
-		modifiedIngredient, err := ingredientRepository.GetIngredient(ctx, ing1.ID)
+		modifiedIngredient, err := ingredientComponent.GetIngredient(ctx, ing1.ID)
 		require.NoError(t, err)
 
 		assert.Equal(t, modifiedIngredient.Name, newIngredientOpts.Name)

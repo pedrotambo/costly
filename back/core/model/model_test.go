@@ -1,8 +1,8 @@
 package model_test
 
 import (
+	"costly/core/components/clock"
 	"costly/core/model"
-	"costly/core/ports/clock"
 	"testing"
 
 	"github.com/stretchr/testify/assert"

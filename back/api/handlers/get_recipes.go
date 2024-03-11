@@ -1,12 +1,12 @@
 package handlers
 
 import (
-	"costly/core/ports/logger"
-	"costly/core/ports/rpst"
+	"costly/core/components/logger"
+	"costly/core/components/recipes"
 	"net/http"
 )
 
-func GetRecipesHandler(recipesGetter rpst.RecipesGetter) http.HandlerFunc {
+func GetRecipesHandler(recipesGetter recipes.RecipesGetter) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		recipes, err := recipesGetter.GetRecipes(r.Context())
 		if err != nil {
