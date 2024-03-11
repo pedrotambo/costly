@@ -9,19 +9,11 @@ import (
 	"database/sql"
 )
 
-type IngredientFinder interface {
-	Find(ctx context.Context, id int64) (model.Ingredient, error)
-}
-
-type IngredientsFinder interface {
-	FindAll(ctx context.Context) ([]model.Ingredient, error)
-}
-
 type IngredientRepository interface {
 	Add(ctx context.Context, ingredient *model.Ingredient) error
 	Update(ctx context.Context, ingredientID int64, updateFunc func(ingredient *model.Ingredient) error) error
-	IngredientFinder
-	IngredientsFinder
+	Find(ctx context.Context, id int64) (model.Ingredient, error)
+	FindAll(ctx context.Context) ([]model.Ingredient, error)
 	AddStock(ctx context.Context, ingredientStock *model.IngredientStock) error
 	FindStockHistory(ctx context.Context, ingredientID int64) ([]model.IngredientStock, error)
 }

@@ -10,18 +10,10 @@ import (
 	"time"
 )
 
-type RecipeGetter interface {
-	Find(ctx context.Context, id int64) (model.Recipe, error)
-}
-
-type RecipesGetter interface {
-	FindAll(ctx context.Context) ([]model.Recipe, error)
-}
-
 type RecipeRepository interface {
 	Add(ctx context.Context, recipe *model.Recipe) error
-	RecipeGetter
-	RecipesGetter
+	Find(ctx context.Context, id int64) (model.Recipe, error)
+	FindAll(ctx context.Context) ([]model.Recipe, error)
 	AddSales(ctx context.Context, recipeSales *model.RecipeSales) error
 }
 
