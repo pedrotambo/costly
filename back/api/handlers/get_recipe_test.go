@@ -2,75 +2,19 @@ package handlers_test
 
 import (
 	"context"
-	"costly/api/handlers"
+	comps "costly/core/components"
 	"costly/core/components/ingredients"
 	"costly/core/components/recipes"
 	"costly/core/mocks"
 	"costly/core/model"
-	"costly/core/ports/clock"
-	"costly/core/ports/database"
-	"costly/core/ports/logger"
 	"net/http"
-	"net/http/httptest"
 	"testing"
 	"time"
 
 	_ "github.com/mattn/go-sqlite3"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
-
-func runGetRecipeHandler(t *testing.T, clock clock.Clock, recipeIDstr string) *httptest.ResponseRecorder {
-	logger, _ := logger.New("debug")
-	db, _ := database.NewFromDatasource(":memory:", logger)
-	ingredientComponent := ingredients.New(db, clock, logger)
-	recipeComponent := recipes.New(db, clock, logger, ingredientComponent)
-	_, err := ingredientComponent.Create(context.Background(), ingredients.CreateIngredientOptions{
-		Name:  "ingr1",
-		Price: 1.50,
-		Unit:  model.Gram,
-	})
-
-	if err != nil {
-		t.Fatal()
-	}
-
-	_, err = ingredientComponent.Create(context.Background(), ingredients.CreateIngredientOptions{
-		Name:  "ingr2",
-		Price: 2.50,
-		Unit:  model.Gram,
-	})
-
-	if err != nil {
-		t.Fatal()
-	}
-
-	recipeComponent.Create(context.Background(), recipes.CreateRecipeOptions{
-		Name: "recipe1",
-		Ingredients: []recipes.RecipeIngredientOptions{
-			{
-				ID:    1,
-				Units: 1,
-			},
-			{
-				ID:    2,
-				Units: 2,
-			},
-		},
-	})
-
-	handler := handlers.GetRecipeHandler(recipeComponent)
-
-	req, err := http.NewRequest("GET", "/recipes/"+recipeIDstr, nil)
-	if err != nil {
-		t.Fatal(err)
-	}
-	rr := httptest.NewRecorder()
-	mux := http.NewServeMux()
-	mux.HandleFunc("/recipes/{recipeID}", handler)
-	mux.ServeHTTP(rr, req)
-
-	return rr
-}
 
 func TestHandleGetRecipe(t *testing.T) {
 	clock := new(mocks.ClockMock)
@@ -121,28 +65,58 @@ func TestHandleGetRecipe(t *testing.T) {
 			}`,
 			statusCode: http.StatusOK,
 		},
-		// {
-		// 	name:        "should get error if unexistent recipe",
-		// 	recipeIDstr: "123",
-		// 	expected:    "",
-		// 	statusCode:  http.StatusNotFound,
-		// },
-		// {
-		// 	name:        "should get error if bad request id",
-		// 	recipeIDstr: "badID",
-		// 	expected: `{
-		// 		"error": {
-		// 			"code":"INVALID_INPUT",
-		// 			"message":"id is invalid"
-		// 		}
-		// 	}`,
-		// 	statusCode: http.StatusBadRequest,
-		// },
+		{
+			name:        "should get error if unexistent recipe",
+			recipeIDstr: "123",
+			expected:    "",
+			statusCode:  http.StatusNotFound,
+		},
+		{
+			name:        "should get error if bad request id",
+			recipeIDstr: "badID",
+			expected: `{
+				"error": {
+					"code":"INVALID_INPUT",
+					"message":"id is invalid"
+				}
+			}`,
+			statusCode: http.StatusBadRequest,
+		},
 	}
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			rr := runGetRecipeHandler(t, clock, tc.recipeIDstr)
+			req, err := http.NewRequest("GET", "/recipes/"+tc.recipeIDstr, nil)
+			require.NoError(t, err)
+			rr := makeRequest(t, clock, func(components *comps.Components) error {
+				_, err := components.Ingredients.Create(context.Background(), ingredients.CreateIngredientOptions{
+					Name:  "ingr1",
+					Price: 1.50,
+					Unit:  model.Gram,
+				})
+				require.NoError(t, err)
+				_, err = components.Ingredients.Create(context.Background(), ingredients.CreateIngredientOptions{
+					Name:  "ingr2",
+					Price: 2.50,
+					Unit:  model.Gram,
+				})
+				require.NoError(t, err)
+				_, err = components.Recipes.Create(context.Background(), recipes.CreateRecipeOptions{
+					Name: "recipe1",
+					Ingredients: []recipes.RecipeIngredientOptions{
+						{
+							ID:    1,
+							Units: 1,
+						},
+						{
+							ID:    2,
+							Units: 2,
+						},
+					},
+				})
+				require.NoError(t, err)
+				return nil
+			}, req)
 			assert.Equal(t, tc.statusCode, rr.Code)
 			if tc.expected != rr.Body.String() {
 				assert.JSONEq(t, tc.expected, rr.Body.String(), "Response body differs")

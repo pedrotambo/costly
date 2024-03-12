@@ -2,12 +2,9 @@ package handlers_test
 
 import (
 	"bytes"
-	"costly/api/handlers"
-	"costly/core/components/ingredients"
+	comps "costly/core/components"
 	"costly/core/mocks"
 	"costly/core/ports/clock"
-	"costly/core/ports/database"
-	"costly/core/ports/logger"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -16,22 +13,15 @@ import (
 
 	_ "github.com/mattn/go-sqlite3"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func runCreateIngredientHandler(t *testing.T, clock clock.Clock, reqBody io.Reader) *httptest.ResponseRecorder {
-	logger, _ := logger.New("debug")
-	db, _ := database.NewFromDatasource(":memory:", logger)
-	ingredientComponent := ingredients.New(db, clock, logger)
-	handler := handlers.CreateIngredientHandler(ingredientComponent)
-
 	req, err := http.NewRequest("POST", "/ingredients", reqBody)
-	if err != nil {
-		t.Fatal(err)
-	}
-	rr := httptest.NewRecorder()
-	handler.ServeHTTP(rr, req)
-
-	return rr
+	require.NoError(t, err)
+	return makeRequest(t, clock, func(components *comps.Components) error {
+		return nil
+	}, req)
 }
 
 func TestHandleCreateIngredient(t *testing.T) {
@@ -100,7 +90,11 @@ func TestHandleCreateIngredient(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			rr := runCreateIngredientHandler(t, clock, bytes.NewBufferString(tc.payload))
+			req, err := http.NewRequest("POST", "/ingredients", bytes.NewBufferString(tc.payload))
+			require.NoError(t, err)
+			rr := makeRequest(t, clock, func(components *comps.Components) error {
+				return nil
+			}, req)
 			assert.Equal(t, tc.statusCode, rr.Code)
 			if tc.expected != rr.Body.String() {
 				assert.JSONEq(t, tc.expected, rr.Body.String(), "Response body differs")

@@ -3,45 +3,18 @@ package handlers_test
 import (
 	"bytes"
 	"context"
-	"costly/api/handlers"
+	comps "costly/core/components"
 	"costly/core/components/ingredients"
 	"costly/core/mocks"
 	"costly/core/model"
-	"costly/core/ports/clock"
-	"costly/core/ports/database"
-	"costly/core/ports/logger"
-	"io"
 	"net/http"
-	"net/http/httptest"
 	"testing"
 	"time"
 
 	_ "github.com/mattn/go-sqlite3"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
-
-func runAddIngredientStockHandler(t *testing.T, clock clock.Clock, ingredientIDstr string, reqBody io.Reader) *httptest.ResponseRecorder {
-	logger, _ := logger.New("debug")
-	db, _ := database.NewFromDatasource(":memory:", logger)
-	ingredientComponent := ingredients.New(db, clock, logger)
-	ingredientComponent.Create(context.Background(), ingredients.CreateIngredientOptions{
-		Name:  "ingredientName",
-		Price: 12.43,
-		Unit:  model.Gram,
-	})
-	handler := handlers.AddIngredientStockHandler(ingredientComponent)
-
-	req, err := http.NewRequest("PUT", "/ingredients/"+ingredientIDstr+"/stock", reqBody)
-	if err != nil {
-		t.Fatal(err)
-	}
-	rr := httptest.NewRecorder()
-	mux := http.NewServeMux()
-	mux.HandleFunc("/ingredients/{ingredientID}/stock", handler)
-	mux.ServeHTTP(rr, req)
-
-	return rr
-}
 
 func TestHandleAddIngredientStock(t *testing.T) {
 	clock := new(mocks.ClockMock)
@@ -114,7 +87,16 @@ func TestHandleAddIngredientStock(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			rr := runAddIngredientStockHandler(t, clock, tc.ingredientIDstr, bytes.NewBufferString(tc.payload))
+			req, err := http.NewRequest("POST", "/ingredients/"+tc.ingredientIDstr+"/stock", bytes.NewBufferString(tc.payload))
+			require.NoError(t, err)
+			rr := makeRequest(t, clock, func(components *comps.Components) error {
+				components.Ingredients.Create(context.Background(), ingredients.CreateIngredientOptions{
+					Name:  "ingredientName",
+					Price: 12.43,
+					Unit:  model.Gram,
+				})
+				return nil
+			}, req)
 			assert.Equal(t, tc.statusCode, rr.Code)
 			if tc.expected != rr.Body.String() {
 				assert.JSONEq(t, tc.expected, rr.Body.String(), "Response body differs")

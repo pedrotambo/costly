@@ -2,56 +2,19 @@ package handlers_test
 
 import (
 	"context"
-	"costly/api/handlers"
+	comps "costly/core/components"
 	"costly/core/components/ingredients"
 	"costly/core/components/recipes"
 	"costly/core/mocks"
 	"costly/core/model"
-	"costly/core/ports/clock"
-	"costly/core/ports/database"
-	"costly/core/ports/logger"
 	"net/http"
-	"net/http/httptest"
 	"testing"
 	"time"
 
 	_ "github.com/mattn/go-sqlite3"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
-
-func runGetRecipesHandler(t *testing.T, clock clock.Clock, recipeOpts []recipes.CreateRecipeOptions) *httptest.ResponseRecorder {
-	logger, _ := logger.New("debug")
-	db, _ := database.NewFromDatasource(":memory:", logger)
-	ingredientComponent := ingredients.New(db, clock, logger)
-	recipeComponent := recipes.New(db, clock, logger, ingredientComponent)
-	ingredientComponent.Create(context.Background(), ingredients.CreateIngredientOptions{
-		Name:  "ingr1",
-		Price: 1.50,
-		Unit:  model.Gram,
-	})
-	ingredientComponent.Create(context.Background(), ingredients.CreateIngredientOptions{
-		Name:  "ingr2",
-		Price: 2.50,
-		Unit:  model.Gram,
-	})
-
-	for _, opts := range recipeOpts {
-		recipeComponent.Create(context.Background(), opts)
-	}
-
-	handler := handlers.GetRecipesHandler(recipeComponent)
-
-	req, err := http.NewRequest("GET", "/ingredients", nil)
-	if err != nil {
-		t.Fatal(err)
-	}
-	rr := httptest.NewRecorder()
-	mux := http.NewServeMux()
-	mux.HandleFunc("/ingredients", handler)
-	mux.ServeHTTP(rr, req)
-
-	return rr
-}
 
 func TestHandleGetRecipes(t *testing.T) {
 	clock := new(mocks.ClockMock)
@@ -158,7 +121,25 @@ func TestHandleGetRecipes(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			rr := runGetRecipesHandler(t, clock, tc.recipes)
+			req, err := http.NewRequest("GET", "/recipes", nil)
+			require.NoError(t, err)
+			rr := makeRequest(t, clock, func(components *comps.Components) error {
+				components.Ingredients.Create(context.Background(), ingredients.CreateIngredientOptions{
+					Name:  "ingr1",
+					Price: 1.50,
+					Unit:  model.Gram,
+				})
+				components.Ingredients.Create(context.Background(), ingredients.CreateIngredientOptions{
+					Name:  "ingr2",
+					Price: 2.50,
+					Unit:  model.Gram,
+				})
+
+				for _, opts := range tc.recipes {
+					components.Recipes.Create(context.Background(), opts)
+				}
+				return nil
+			}, req)
 			assert.Equal(t, tc.statusCode, rr.Code)
 			if tc.expected != rr.Body.String() {
 				assert.JSONEq(t, tc.expected, rr.Body.String(), "Response body differs")

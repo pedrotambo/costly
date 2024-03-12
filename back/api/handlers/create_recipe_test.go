@@ -3,7 +3,8 @@ package handlers_test
 import (
 	"bytes"
 	"context"
-	"costly/api/handlers"
+	"costly/api"
+	comps "costly/core/components"
 	"costly/core/components/ingredients"
 	"costly/core/components/recipes"
 	"costly/core/mocks"
@@ -11,7 +12,6 @@ import (
 	"costly/core/ports/clock"
 	"costly/core/ports/database"
 	"costly/core/ports/logger"
-	"io"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -21,34 +21,31 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func runCreateRecipeHandler(t *testing.T, clock clock.Clock, reqBody io.Reader) *httptest.ResponseRecorder {
+var dummyHandler = api.Middleware(func(h http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		h.ServeHTTP(w, r)
+	})
+})
+
+func makeRequest(t *testing.T, clock clock.Clock, prepare func(components *comps.Components) error, req *http.Request) *httptest.ResponseRecorder {
 	logger, _ := logger.New("debug")
 	db, _ := database.NewFromDatasource(":memory:", logger)
 	ingredientComponent := ingredients.New(db, clock, logger)
 	recipeComponent := recipes.New(db, clock, logger, ingredientComponent)
-	ingredientComponent.Create(context.Background(), ingredients.CreateIngredientOptions{
-		Name:  "ingr1",
-		Price: 1.50,
-		Unit:  model.Gram,
-	})
-	ingredientComponent.Create(context.Background(), ingredients.CreateIngredientOptions{
-		Name:  "ingr2",
-		Price: 2.50,
-		Unit:  model.Gram,
-	})
-
-	handler := handlers.CreateRecipeHandler(recipeComponent)
-
-	req, err := http.NewRequest("POST", "/recipes", reqBody)
+	components := &comps.Components{
+		Ingredients: ingredientComponent,
+		Recipes:     recipeComponent,
+	}
+	err := prepare(components)
 	if err != nil {
 		t.Fatal(err)
 	}
-	rr := httptest.NewRecorder()
-	mux := http.NewServeMux()
-	mux.HandleFunc("/recipes", handler)
-	mux.ServeHTTP(rr, req)
 
+	rr := httptest.NewRecorder()
+	var router = api.NewRouter(components, dummyHandler)
+	router.ServeHTTP(rr, req)
 	return rr
+
 }
 
 func TestHandleCreateRecipe(t *testing.T) {
@@ -177,7 +174,24 @@ func TestHandleCreateRecipe(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			rr := runCreateRecipeHandler(t, clock, bytes.NewBufferString(tc.payload))
+			req, err := http.NewRequest("POST", "/recipes", bytes.NewBufferString(tc.payload))
+			if err != nil {
+				t.Fatal(err)
+			}
+			rr := makeRequest(t, clock, func(components *comps.Components) error {
+				components.Ingredients.Create(context.Background(), ingredients.CreateIngredientOptions{
+					Name:  "ingr1",
+					Price: 1.50,
+					Unit:  model.Gram,
+				})
+				components.Ingredients.Create(context.Background(), ingredients.CreateIngredientOptions{
+					Name:  "ingr2",
+					Price: 2.50,
+					Unit:  model.Gram,
+				})
+
+				return nil
+			}, req)
 			assert.Equal(t, tc.statusCode, rr.Code)
 			if tc.expected != rr.Body.String() {
 				assert.JSONEq(t, tc.expected, rr.Body.String(), "Response body differs")
