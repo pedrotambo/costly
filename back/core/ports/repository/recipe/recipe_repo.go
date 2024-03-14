@@ -15,32 +15,34 @@ type RecipeRepository interface {
 }
 
 type repository struct {
-	db database.TX
+	db database.Database
 }
 
-func New(db database.TX) RecipeRepository {
+func New(db database.Database) RecipeRepository {
 	return &repository{db}
 }
 
 func (r *repository) Add(ctx context.Context, recipe *model.Recipe) error {
-	result, err := r.db.ExecContext(ctx, "INSERT INTO recipe (name, created_at, last_modified) VALUES (?, ?, ?)", recipe.Name, recipe.CreatedAt, recipe.LastModified)
-	if err != nil {
-		return err
-	}
-	recipeID, err := result.LastInsertId()
-	if err != nil {
-		return err
-	}
-
-	for _, recipeIngredient := range recipe.Ingredients {
-		_, err := r.db.ExecContext(ctx, "INSERT INTO recipe_ingredient (recipe_id, ingredient_id, units) VALUES (?, ?, ?)", recipeID, recipeIngredient.ID, recipeIngredient.Units)
+	return r.db.WithTx(ctx, func(tx database.Database) error {
+		result, err := tx.ExecContext(ctx, "INSERT INTO recipe (name, created_at, last_modified) VALUES (?, ?, ?)", recipe.Name, recipe.CreatedAt, recipe.LastModified)
 		if err != nil {
 			return err
 		}
-	}
+		recipeID, err := result.LastInsertId()
+		if err != nil {
+			return err
+		}
 
-	recipe.ID = recipeID
-	return nil
+		for _, recipeIngredient := range recipe.Ingredients {
+			_, err := tx.ExecContext(ctx, "INSERT INTO recipe_ingredient (recipe_id, ingredient_id, units) VALUES (?, ?, ?)", recipeID, recipeIngredient.ID, recipeIngredient.Units)
+			if err != nil {
+				return err
+			}
+		}
+
+		recipe.ID = recipeID
+		return nil
+	})
 }
 
 func (r *repository) Find(ctx context.Context, id int64) (model.Recipe, error) {

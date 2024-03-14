@@ -3,7 +3,6 @@ package recipes
 import (
 	"context"
 	"costly/core/model"
-	repo "costly/core/ports/repository"
 	"fmt"
 )
 
@@ -21,13 +20,9 @@ func (cr *recipeUseCases) Create(ctx context.Context, recipeOpts CreateRecipeOpt
 	if err != nil {
 		return &model.Recipe{}, err
 	}
-	if err := cr.repository.Atomic(ctx, func(repo repo.Repository) error {
-		if err := repo.Recipes().Add(ctx, newRecipe); err != nil {
-			return fmt.Errorf("failed to create recipe: %s", err)
-		}
-		return nil
-	}); err != nil {
-		return &model.Recipe{}, err
+
+	if err := cr.repository.Recipes().Add(ctx, newRecipe); err != nil {
+		return &model.Recipe{}, fmt.Errorf("failed to create recipe: %s", err)
 	}
 
 	return newRecipe, nil

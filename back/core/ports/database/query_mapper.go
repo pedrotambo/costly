@@ -6,12 +6,12 @@ import (
 
 type RowMapper[T any] func(rowScanner RowScanner) (T, error)
 
-func QueryRowAndMap[T any](ctx context.Context, db RowQuerier, rowMapper RowMapper[T], query string, args ...any) (T, error) {
+func QueryRowAndMap[T any](ctx context.Context, db Database, rowMapper RowMapper[T], query string, args ...any) (T, error) {
 	row := db.QueryRowContext(ctx, query, args...)
 	return rowMapper(row)
 }
 
-func QueryAndMap[T any](ctx context.Context, db RowsQuerier, rowMapper RowMapper[T], query string, args ...any) ([]T, error) {
+func QueryAndMap[T any](ctx context.Context, db Database, rowMapper RowMapper[T], query string, args ...any) ([]T, error) {
 	rows, err := db.QueryContext(ctx, query, args...)
 	if err != nil {
 		return nil, err

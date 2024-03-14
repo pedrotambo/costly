@@ -15,15 +15,15 @@ type IngredientStockRepository interface {
 	Find(ctx context.Context, ingredientStockID int64) (model.IngredientStock, error)
 }
 
-type ingredientStockRepository struct {
-	db database.TX
+type repository struct {
+	db database.Database
 }
 
-func New(db database.TX) IngredientStockRepository {
-	return &ingredientStockRepository{db}
+func New(db database.Database) IngredientStockRepository {
+	return &repository{db}
 }
 
-func (r *ingredientStockRepository) Add(ctx context.Context, ingredientStock *model.IngredientStock) error {
+func (r *repository) Add(ctx context.Context, ingredientStock *model.IngredientStock) error {
 	result, err := r.db.ExecContext(ctx, "INSERT INTO stock_history (ingredient_id, units, price, created_at) VALUES (?, ?, ?, ?)", ingredientStock.IngredientID, ingredientStock.Units, ingredientStock.Price, ingredientStock.CreatedAt)
 	if err != nil {
 		if sqlError, ok := err.(sqlite3.Error); ok {
@@ -41,7 +41,7 @@ func (r *ingredientStockRepository) Add(ctx context.Context, ingredientStock *mo
 	return nil
 }
 
-func (r *ingredientStockRepository) Find(ctx context.Context, ingredientStockID int64) (model.IngredientStock, error) {
+func (r *repository) Find(ctx context.Context, ingredientStockID int64) (model.IngredientStock, error) {
 	stock, err := database.QueryRowAndMap(ctx, r.db, mapToIngredientStock, "SELECT * FROM stock_history WHERE id = ?", ingredientStockID)
 	if err == sql.ErrNoRows {
 		return model.IngredientStock{}, errs.ErrNotFound

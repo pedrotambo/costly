@@ -21,7 +21,7 @@ type Repository interface {
 
 type repository struct {
 	db      database.Database
-	session database.TX
+	session database.Database
 }
 
 func New(db database.Database) Repository {
@@ -49,7 +49,7 @@ func (r *repository) RecipeViews() recipeviewrepo.RecipeViewRepository {
 }
 
 func (r *repository) Atomic(ctx context.Context, fn func(repo Repository) error) (err error) {
-	return r.db.WithTx(ctx, func(tx database.TX) error {
+	return r.db.WithTx(ctx, func(tx database.Database) error {
 		newRepo := &repository{
 			db: r.db,
 			// injecting the new trx handle

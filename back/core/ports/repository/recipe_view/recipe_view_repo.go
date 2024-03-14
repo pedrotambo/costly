@@ -13,10 +13,10 @@ type RecipeViewRepository interface {
 }
 
 type repository struct {
-	db database.TX
+	db database.Database
 }
 
-func New(db database.TX) RecipeViewRepository {
+func New(db database.Database) RecipeViewRepository {
 	return &repository{db}
 }
 

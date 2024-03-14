@@ -20,7 +20,7 @@ func (m *ClockMock) Now() time.Time {
 	value := args.Get(0)
 	now, ok := value.(time.Time)
 	if !ok {
-		panic(fmt.Errorf("Error getting now"))
+		panic(fmt.Errorf("error getting now"))
 	}
 	return now
 }
@@ -53,6 +53,6 @@ func (dm *DatabaseMock) ExecContext(ctx context.Context, query string, args ...a
 	return nil, ErrDBInternal
 }
 
-func (dm *DatabaseMock) WithTx(ctx context.Context, op func(tx database.TX) error) error {
+func (dm *DatabaseMock) WithTx(ctx context.Context, op func(tx database.Database) error) error {
 	return ErrDBInternal
 }

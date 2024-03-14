@@ -19,10 +19,10 @@ type IngredientRepository interface {
 }
 
 type ingredientRepository struct {
-	db database.TX
+	db database.Database
 }
 
-func New(db database.TX) IngredientRepository {
+func New(db database.Database) IngredientRepository {
 	return &ingredientRepository{db}
 }
 
