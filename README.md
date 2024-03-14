@@ -1,4 +1,5 @@
-![Build](https://github.com/github/docs/actions/workflows/main.yml/badge.svg)
+![Build](https://github.com/pedrotambo/costly/actions/workflows/go.yml/badge.svg)
+
 
 # Costly
 
