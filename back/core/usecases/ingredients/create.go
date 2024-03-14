@@ -15,7 +15,7 @@ type CreateIngredientOptions struct {
 	Unit  model.Unit
 }
 
-func (ic *ingredientComponent) Create(ctx context.Context, opts CreateIngredientOptions) (*model.Ingredient, error) {
+func (ic *ingredientUseCases) Create(ctx context.Context, opts CreateIngredientOptions) (*model.Ingredient, error) {
 	newIngredient, err := model.NewIngredient(opts.Name, opts.Unit, opts.Price, ic.clock.Now())
 	if err != nil {
 		return &model.Ingredient{}, err

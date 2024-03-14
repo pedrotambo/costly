@@ -1,9 +1,9 @@
 package ingredients_test
 
 import (
-	"costly/core/components/ingredients"
 	"costly/core/errs"
 	"costly/core/model"
+	"costly/core/usecases/ingredients"
 	"testing"
 
 	"github.com/stretchr/testify/assert"

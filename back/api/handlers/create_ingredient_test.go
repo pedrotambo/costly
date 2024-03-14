@@ -2,9 +2,9 @@ package handlers_test
 
 import (
 	"bytes"
-	comps "costly/core/components"
 	"costly/core/mocks"
 	"costly/core/ports/clock"
+	"costly/core/usecases"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -19,7 +19,7 @@ import (
 func runCreateIngredientHandler(t *testing.T, clock clock.Clock, reqBody io.Reader) *httptest.ResponseRecorder {
 	req, err := http.NewRequest("POST", "/ingredients", reqBody)
 	require.NoError(t, err)
-	return makeRequest(t, clock, func(components *comps.Components) error {
+	return makeRequest(t, clock, func(useCases *usecases.UseCases) error {
 		return nil
 	}, req)
 }
@@ -92,7 +92,7 @@ func TestHandleCreateIngredient(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			req, err := http.NewRequest("POST", "/ingredients", bytes.NewBufferString(tc.payload))
 			require.NoError(t, err)
-			rr := makeRequest(t, clock, func(components *comps.Components) error {
+			rr := makeRequest(t, clock, func(useCases *usecases.UseCases) error {
 				return nil
 			}, req)
 			assert.Equal(t, tc.statusCode, rr.Code)

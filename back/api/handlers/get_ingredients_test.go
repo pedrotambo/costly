@@ -2,10 +2,10 @@ package handlers_test
 
 import (
 	"context"
-	comps "costly/core/components"
-	"costly/core/components/ingredients"
 	"costly/core/mocks"
 	"costly/core/model"
+	"costly/core/usecases"
+	"costly/core/usecases/ingredients"
 	"net/http"
 	"testing"
 	"time"
@@ -74,9 +74,9 @@ func TestHandleGetIngredients(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			req, err := http.NewRequest("GET", "/ingredients", nil)
 			require.NoError(t, err)
-			rr := makeRequest(t, clock, func(components *comps.Components) error {
+			rr := makeRequest(t, clock, func(useCases *usecases.UseCases) error {
 				for _, opts := range tc.ingredients {
-					components.Ingredients.Create(context.Background(), opts)
+					useCases.Ingredients.Create(context.Background(), opts)
 				}
 				return nil
 			}, req)

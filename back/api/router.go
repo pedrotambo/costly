@@ -3,7 +3,7 @@ package api
 import (
 	"costly/api/handlers"
 
-	comps "costly/core/components"
+	"costly/core/usecases"
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
@@ -20,7 +20,7 @@ func init() {
 
 type Middleware func(http.Handler) http.Handler
 
-func NewRouter(components *comps.Components, authMiddleware Middleware, middlewares ...Middleware) http.Handler {
+func NewRouter(useCases *usecases.UseCases, authMiddleware Middleware, middlewares ...Middleware) http.Handler {
 	r := chi.NewRouter()
 
 	for _, m := range middlewares {
@@ -41,17 +41,17 @@ func NewRouter(components *comps.Components, authMiddleware Middleware, middlewa
 	r.Group(func(r chi.Router) {
 		r.Use(authMiddleware)
 		// ingredients
-		r.Get("/ingredients", handlers.GetIngredientsHandler(components.Ingredients))
-		r.Post("/ingredients", handlers.CreateIngredientHandler(components.Ingredients))
-		r.Get("/ingredients/{ingredientID}", handlers.GetIngredientHandler(components.Ingredients))
-		r.Put("/ingredients/{ingredientID}", handlers.EditIngredientHandler(components.Ingredients))
-		r.Post("/ingredients/{ingredientID}/stock", handlers.AddIngredientStockHandler(components.Ingredients))
+		r.Get("/ingredients", handlers.GetIngredientsHandler(useCases.Ingredients))
+		r.Post("/ingredients", handlers.CreateIngredientHandler(useCases.Ingredients))
+		r.Get("/ingredients/{ingredientID}", handlers.GetIngredientHandler(useCases.Ingredients))
+		r.Put("/ingredients/{ingredientID}", handlers.EditIngredientHandler(useCases.Ingredients))
+		r.Post("/ingredients/{ingredientID}/stock", handlers.AddIngredientStockHandler(useCases.Ingredients))
 
 		// recipes
-		r.Post("/recipes", handlers.CreateRecipeHandler(components.Recipes))
-		r.Get("/recipes", handlers.GetRecipesHandler(components.Recipes))
-		r.Get("/recipes/{recipeID}", handlers.GetRecipeHandler(components.Recipes))
-		r.Post("/recipes/{recipeID}/sales", handlers.AddRecipeSalesHandler(components.Recipes))
+		r.Post("/recipes", handlers.CreateRecipeHandler(useCases.Recipes))
+		r.Get("/recipes", handlers.GetRecipesHandler(useCases.Recipes))
+		r.Get("/recipes/{recipeID}", handlers.GetRecipeHandler(useCases.Recipes))
+		r.Post("/recipes/{recipeID}/sales", handlers.AddRecipeSalesHandler(useCases.Recipes))
 	})
 
 	return r

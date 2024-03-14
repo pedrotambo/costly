@@ -4,14 +4,14 @@ import (
 	"bytes"
 	"context"
 	"costly/api"
-	comps "costly/core/components"
-	"costly/core/components/ingredients"
-	"costly/core/components/recipes"
 	"costly/core/mocks"
 	"costly/core/model"
 	"costly/core/ports/clock"
 	"costly/core/ports/database"
 	"costly/core/ports/logger"
+	"costly/core/usecases"
+	"costly/core/usecases/ingredients"
+	"costly/core/usecases/recipes"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -27,22 +27,22 @@ var dummyHandler = api.Middleware(func(h http.Handler) http.Handler {
 	})
 })
 
-func makeRequest(t *testing.T, clock clock.Clock, prepare func(components *comps.Components) error, req *http.Request) *httptest.ResponseRecorder {
+func makeRequest(t *testing.T, clock clock.Clock, prepare func(useCases *usecases.UseCases) error, req *http.Request) *httptest.ResponseRecorder {
 	logger, _ := logger.New("debug")
 	db, _ := database.NewFromDatasource(":memory:", logger)
-	ingredientComponent := ingredients.New(db, clock, logger)
-	recipeComponent := recipes.New(db, clock, logger, ingredientComponent)
-	components := &comps.Components{
-		Ingredients: ingredientComponent,
-		Recipes:     recipeComponent,
+	ingredientUseCases := ingredients.New(db, clock)
+	recipeUseCases := recipes.New(db, clock, logger, ingredientUseCases)
+	useCases := &usecases.UseCases{
+		Ingredients: ingredientUseCases,
+		Recipes:     recipeUseCases,
 	}
-	err := prepare(components)
+	err := prepare(useCases)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	rr := httptest.NewRecorder()
-	var router = api.NewRouter(components, dummyHandler)
+	var router = api.NewRouter(useCases, dummyHandler)
 	router.ServeHTTP(rr, req)
 	return rr
 
@@ -161,13 +161,13 @@ func TestHandleCreateRecipe(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			rr := makeRequest(t, clock, func(components *comps.Components) error {
-				components.Ingredients.Create(context.Background(), ingredients.CreateIngredientOptions{
+			rr := makeRequest(t, clock, func(useCases *usecases.UseCases) error {
+				useCases.Ingredients.Create(context.Background(), ingredients.CreateIngredientOptions{
 					Name:  "ingr1",
 					Price: 1.50,
 					Unit:  model.Gram,
 				})
-				components.Ingredients.Create(context.Background(), ingredients.CreateIngredientOptions{
+				useCases.Ingredients.Create(context.Background(), ingredients.CreateIngredientOptions{
 					Name:  "ingr2",
 					Price: 2.50,
 					Unit:  model.Gram,

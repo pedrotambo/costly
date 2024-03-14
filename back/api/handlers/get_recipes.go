@@ -1,8 +1,8 @@
 package handlers
 
 import (
-	"costly/core/components/recipes"
 	"costly/core/ports/logger"
+	"costly/core/usecases/recipes"
 	"net/http"
 )
 

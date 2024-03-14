@@ -1,10 +1,10 @@
 package handlers
 
 import (
-	"costly/core/components/recipes"
 	"costly/core/errs"
 	"costly/core/model"
 	"costly/core/ports/logger"
+	"costly/core/usecases/recipes"
 	"net/http"
 	"strconv"
 )

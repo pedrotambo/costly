@@ -2,10 +2,10 @@ package recipes_test
 
 import (
 	"context"
-	"costly/core/components/recipes"
 	"costly/core/model"
 	"costly/core/ports/clock"
 	"costly/core/ports/logger"
+	"costly/core/usecases/recipes"
 	"testing"
 
 	"github.com/stretchr/testify/assert"

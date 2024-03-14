@@ -1,14 +1,14 @@
 package recipes
 
 import (
-	"costly/core/components/ingredients"
 	"costly/core/ports/clock"
 	"costly/core/ports/database"
 	"costly/core/ports/logger"
 	repo "costly/core/ports/repository"
+	"costly/core/usecases/ingredients"
 )
 
-type RecipeComponent interface {
+type RecipeUseCases interface {
 	RecipeCreator
 	RecipeSalesAdder
 	RecipeFinder
@@ -17,11 +17,11 @@ type RecipeComponent interface {
 
 type recipeUseCases struct {
 	clock       clock.Clock
-	ingredients ingredients.IngredientComponent
+	ingredients ingredients.IngredientUseCases
 	repository  repo.Repository
 }
 
-func New(database database.Database, clock clock.Clock, logger logger.Logger, ingredients ingredients.IngredientComponent) RecipeComponent {
+func New(database database.Database, clock clock.Clock, logger logger.Logger, ingredients ingredients.IngredientUseCases) RecipeUseCases {
 	return &recipeUseCases{
 		clock:       clock,
 		ingredients: ingredients,

@@ -23,7 +23,7 @@ func (opts CreateIngredientOptions) validate() error {
 	return nil
 }
 
-func (ic *ingredientComponent) Update(ctx context.Context, ingredientID int64, ingredientOpts CreateIngredientOptions) error {
+func (ic *ingredientUseCases) Update(ctx context.Context, ingredientID int64, ingredientOpts CreateIngredientOptions) error {
 	if err := ingredientOpts.validate(); err != nil {
 		return err
 	}

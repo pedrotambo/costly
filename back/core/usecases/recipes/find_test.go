@@ -1,11 +1,11 @@
 package recipes_test
 
 import (
-	"costly/core/components/recipes"
 	"costly/core/errs"
 	"costly/core/model"
 	"costly/core/ports/clock"
 	"costly/core/ports/logger"
+	"costly/core/usecases/recipes"
 	"testing"
 
 	"github.com/stretchr/testify/assert"

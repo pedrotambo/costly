@@ -3,10 +3,10 @@ package handlers_test
 import (
 	"bytes"
 	"context"
-	comps "costly/core/components"
-	"costly/core/components/ingredients"
 	"costly/core/mocks"
 	"costly/core/model"
+	"costly/core/usecases"
+	"costly/core/usecases/ingredients"
 	"net/http"
 	"testing"
 	"time"
@@ -89,8 +89,8 @@ func TestHandleAddIngredientStock(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			req, err := http.NewRequest("POST", "/ingredients/"+tc.ingredientIDstr+"/stock", bytes.NewBufferString(tc.payload))
 			require.NoError(t, err)
-			rr := makeRequest(t, clock, func(components *comps.Components) error {
-				components.Ingredients.Create(context.Background(), ingredients.CreateIngredientOptions{
+			rr := makeRequest(t, clock, func(useCases *usecases.UseCases) error {
+				useCases.Ingredients.Create(context.Background(), ingredients.CreateIngredientOptions{
 					Name:  "ingredientName",
 					Price: 12.43,
 					Unit:  model.Gram,

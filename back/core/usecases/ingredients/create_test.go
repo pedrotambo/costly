@@ -2,13 +2,13 @@ package ingredients_test
 
 import (
 	"context"
-	"costly/core/components/ingredients"
 	"costly/core/errs"
 	"costly/core/mocks"
 	"costly/core/model"
 	"costly/core/ports/clock"
 	"costly/core/ports/database"
 	"costly/core/ports/logger"
+	"costly/core/usecases/ingredients"
 	"testing"
 	"time"
 
@@ -17,13 +17,13 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func setupTest(t *testing.T) (ingredients.IngredientComponent, context.Context) {
+func setupTest(t *testing.T) (ingredients.IngredientUseCases, context.Context) {
 	logger, err := logger.New("debug")
 	require.NoError(t, err)
 	clock := clock.New()
 	db, err := database.NewFromDatasource(":memory:", logger)
 	require.NoError(t, err)
-	return ingredients.New(db, clock, logger), context.Background()
+	return ingredients.New(db, clock), context.Background()
 }
 
 func TestCreateIngredient(t *testing.T) {
@@ -34,8 +34,8 @@ func TestCreateIngredient(t *testing.T) {
 		clockMock := new(mocks.ClockMock)
 		now := time.UnixMilli(12345).UTC()
 		clockMock.On("Now").Return(now)
-		ingredientComponent := ingredients.New(db, clockMock, logger)
-		ingredient, err := ingredientComponent.Create(context.Background(), ingredients.CreateIngredientOptions{
+		ingredientUseCases := ingredients.New(db, clockMock)
+		ingredient, err := ingredientUseCases.Create(context.Background(), ingredients.CreateIngredientOptions{
 			Name:  "name",
 			Price: 10.0,
 			Unit:  model.Gram,

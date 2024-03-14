@@ -2,14 +2,14 @@ package recipes_test
 
 import (
 	"context"
-	"costly/core/components/ingredients"
-	"costly/core/components/recipes"
 	"costly/core/errs"
 	"costly/core/mocks"
 	"costly/core/model"
 	"costly/core/ports/clock"
 	"costly/core/ports/database"
 	"costly/core/ports/logger"
+	"costly/core/usecases/ingredients"
+	"costly/core/usecases/recipes"
 	"testing"
 	"time"
 
@@ -35,21 +35,21 @@ var pepper = ingredients.CreateIngredientOptions{
 	Unit:  model.Gram,
 }
 
-func setupTest(logger logger.Logger, clock clock.Clock) ([]model.Ingredient, recipes.RecipeComponent, context.Context) {
+func setupTest(logger logger.Logger, clock clock.Clock) ([]model.Ingredient, recipes.RecipeUseCases, context.Context) {
 	db, _ := database.NewFromDatasource(":memory:", logger)
-	ingredientComponent := ingredients.New(db, clock, logger)
+	ingredientUseCases := ingredients.New(db, clock)
 	ctx := context.Background()
 	var createdIngredients = []model.Ingredient{}
 	for _, ingredient := range []ingredients.CreateIngredientOptions{meat, salt, pepper} {
-		ing, _ := ingredientComponent.Create(ctx, ingredients.CreateIngredientOptions{
+		ing, _ := ingredientUseCases.Create(ctx, ingredients.CreateIngredientOptions{
 			Name:  ingredient.Name,
 			Price: ingredient.Price,
 			Unit:  ingredient.Unit,
 		})
 		createdIngredients = append(createdIngredients, *ing)
 	}
-	recipeComponent := recipes.New(db, clock, logger, ingredientComponent)
-	return createdIngredients, recipeComponent, context.Background()
+	recipeUseCases := recipes.New(db, clock, logger, ingredientUseCases)
+	return createdIngredients, recipeUseCases, context.Background()
 }
 
 func TestCreate(t *testing.T) {

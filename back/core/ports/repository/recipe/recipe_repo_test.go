@@ -2,12 +2,12 @@ package reciperepo_test
 
 import (
 	"context"
-	"costly/core/components/ingredients"
 	"costly/core/model"
 	"costly/core/ports/clock"
 	"costly/core/ports/database"
 	"costly/core/ports/logger"
 	reciperepo "costly/core/ports/repository/recipe"
+	"costly/core/usecases/ingredients"
 	"testing"
 
 	_ "github.com/mattn/go-sqlite3"
@@ -17,7 +17,7 @@ import (
 
 func createDBWithIngredients(t *testing.T, logger logger.Logger, clock clock.Clock) database.Database {
 	db, _ := database.NewFromDatasource(":memory:", logger)
-	ingredientComponent := ingredients.New(db, clock, logger)
+	ingredientUseCases := ingredients.New(db, clock)
 	ctx := context.Background()
 	var ingredientOpts = []ingredients.CreateIngredientOptions{
 		{
@@ -37,7 +37,7 @@ func createDBWithIngredients(t *testing.T, logger logger.Logger, clock clock.Clo
 		},
 	}
 	for _, ingredient := range ingredientOpts {
-		if _, err := ingredientComponent.Create(ctx, ingredient); err != nil {
+		if _, err := ingredientUseCases.Create(ctx, ingredient); err != nil {
 			t.FailNow()
 		}
 	}

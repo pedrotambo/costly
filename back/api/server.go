@@ -2,8 +2,8 @@ package api
 
 import (
 	"context"
-	comps "costly/core/components"
 	"costly/core/ports/logger"
+	"costly/core/usecases"
 	"fmt"
 	"net/http"
 	"os"
@@ -20,10 +20,10 @@ type server struct {
 	logger     logger.Logger
 }
 
-func NewServer(listenAddress string, authSecret string, components *comps.Components, logger logger.Logger) Server {
+func NewServer(listenAddress string, authSecret string, useCases *usecases.UseCases, logger logger.Logger) Server {
 	loggerMiddleware := NewLoggerMiddleware(logger)
 	authMiddleware := NewAuthMiddleware([]byte(authSecret), logger)
-	router := NewRouter(components, authMiddleware, loggerMiddleware)
+	router := NewRouter(useCases, authMiddleware, loggerMiddleware)
 	return &server{
 		httpServer: &http.Server{
 			Addr:    listenAddress,

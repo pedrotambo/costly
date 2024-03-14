@@ -5,8 +5,8 @@ import (
 	"os"
 
 	"costly/api"
-	comps "costly/core/components"
 	"costly/core/ports"
+	comps "costly/core/usecases"
 
 	_ "github.com/mattn/go-sqlite3"
 )

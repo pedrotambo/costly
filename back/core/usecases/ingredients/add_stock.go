@@ -27,7 +27,7 @@ type IngredientStockAdder interface {
 	AddStock(ctx context.Context, ingredientID int64, ingredientStockOpts IngredientStockOptions) (*model.IngredientStock, error)
 }
 
-func (ic *ingredientComponent) AddStock(ctx context.Context, ingredientID int64, ingredientStockOpts IngredientStockOptions) (*model.IngredientStock, error) {
+func (ic *ingredientUseCases) AddStock(ctx context.Context, ingredientID int64, ingredientStockOpts IngredientStockOptions) (*model.IngredientStock, error) {
 	if err := ingredientStockOpts.validate(); err != nil {
 		return &model.IngredientStock{}, err
 	}

@@ -2,11 +2,11 @@ package handlers_test
 
 import (
 	"context"
-	comps "costly/core/components"
-	"costly/core/components/ingredients"
-	"costly/core/components/recipes"
 	"costly/core/mocks"
 	"costly/core/model"
+	"costly/core/usecases"
+	"costly/core/usecases/ingredients"
+	"costly/core/usecases/recipes"
 	"net/http"
 	"testing"
 	"time"
@@ -76,20 +76,20 @@ func TestHandleGetRecipe(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			req, err := http.NewRequest("GET", "/recipes/"+tc.recipeIDstr, nil)
 			require.NoError(t, err)
-			rr := makeRequest(t, clock, func(components *comps.Components) error {
-				_, err := components.Ingredients.Create(context.Background(), ingredients.CreateIngredientOptions{
+			rr := makeRequest(t, clock, func(useCases *usecases.UseCases) error {
+				_, err := useCases.Ingredients.Create(context.Background(), ingredients.CreateIngredientOptions{
 					Name:  "ingr1",
 					Price: 1.50,
 					Unit:  model.Gram,
 				})
 				require.NoError(t, err)
-				_, err = components.Ingredients.Create(context.Background(), ingredients.CreateIngredientOptions{
+				_, err = useCases.Ingredients.Create(context.Background(), ingredients.CreateIngredientOptions{
 					Name:  "ingr2",
 					Price: 2.50,
 					Unit:  model.Gram,
 				})
 				require.NoError(t, err)
-				_, err = components.Recipes.Create(context.Background(), recipes.CreateRecipeOptions{
+				_, err = useCases.Recipes.Create(context.Background(), recipes.CreateRecipeOptions{
 					Name: "recipe1",
 					Ingredients: []model.RecipeIngredient{
 						{

@@ -3,11 +3,10 @@ package ingredients
 import (
 	"costly/core/ports/clock"
 	"costly/core/ports/database"
-	"costly/core/ports/logger"
 	repo "costly/core/ports/repository"
 )
 
-type IngredientComponent interface {
+type IngredientUseCases interface {
 	IngredientCreator
 	IngredientEditor
 	IngredientStockAdder
@@ -15,13 +14,13 @@ type IngredientComponent interface {
 	IngredientsFinder
 }
 
-type ingredientComponent struct {
+type ingredientUseCases struct {
 	clock      clock.Clock
 	repository repo.Repository
 }
 
-func New(database database.Database, clock clock.Clock, logger logger.Logger) IngredientComponent {
-	return &ingredientComponent{
+func New(database database.Database, clock clock.Clock) IngredientUseCases {
+	return &ingredientUseCases{
 		clock:      clock,
 		repository: repo.New(database),
 	}
