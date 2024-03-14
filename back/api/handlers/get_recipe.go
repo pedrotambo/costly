@@ -10,7 +10,7 @@ import (
 )
 
 type RecipeResponse struct {
-	model.Recipe
+	model.RecipeView
 	Cost float64 `json:"cost"`
 }
 
@@ -31,8 +31,8 @@ func GetRecipeHandler(recipeGetter recipes.RecipeFinder) http.HandlerFunc {
 			return
 		}
 		RespondJSON(w, 200, RecipeResponse{
-			Recipe: recipe,
-			Cost:   recipe.Cost(),
+			RecipeView: recipe,
+			Cost:       recipe.Cost(),
 		})
 	}
 }

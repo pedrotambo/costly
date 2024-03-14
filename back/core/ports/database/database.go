@@ -84,10 +84,10 @@ func (db *database) WithTx(ctx context.Context, op func(tx TX) error) error {
 	if err != nil {
 		return fmt.Errorf("failed to start transaction: %w", err)
 	}
-	err = op(NewTX(tx))
+	err = op(newTX(tx))
 	if err != nil {
-		if err := tx.Rollback(); err != nil && err != sql.ErrTxDone {
-			db.logger.Error(err, "failed to rollback transaction")
+		if rbErr := tx.Rollback(); rbErr != nil && rbErr != sql.ErrTxDone {
+			return fmt.Errorf("tx err: %v, rb err: %v", err, rbErr)
 		}
 		return err
 	}
@@ -99,7 +99,7 @@ type dbtx struct {
 	sqlTx *sql.Tx
 }
 
-func NewTX(sqltx *sql.Tx) TX {
+func newTX(sqltx *sql.Tx) TX {
 	return &dbtx{sqlTx: sqltx}
 }
 

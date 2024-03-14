@@ -17,8 +17,8 @@ func GetRecipesHandler(recipesGetter recipes.RecipesFinder) http.HandlerFunc {
 		recipeResponses := []RecipeResponse{}
 		for _, recipe := range recipes {
 			recipeResponses = append(recipeResponses, RecipeResponse{
-				Recipe: recipe,
-				Cost:   recipe.Cost(),
+				RecipeView: recipe,
+				Cost:       recipe.Cost(),
 			})
 		}
 		RespondJSON(w, 200, recipeResponses)
