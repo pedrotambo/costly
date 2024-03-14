@@ -1,6 +1,6 @@
-back/tmp
-back/costly
-back/.vscode
-back/test.db
+tmp
+costly
+.vscode
+test.db
 front/node_modules
 
