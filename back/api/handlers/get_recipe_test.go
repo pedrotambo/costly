@@ -35,27 +35,15 @@ func TestHandleGetRecipe(t *testing.T) {
 				"name": "recipe1",
 				"ingredients": [
 					{
-						"ingredient": {
-							"id": 1,
-							"name": "ingr1",
-							"unit": "gr",
-							"price": 1.50,
-							"units_in_stock":0,
-							"created_at": "1970-01-01T00:00:12.345Z",
-							"last_modified": "1970-01-01T00:00:12.345Z"
-						},
+						"id": 1,
+						"name": "ingr1",
+						"price": 1.50,
 						"units": 1
 					},
 					{
-						"ingredient": {
-							"id": 2,
-							"name": "ingr2",
-							"unit": "gr",
-							"price": 2.50,
-							"units_in_stock":0,
-							"created_at": "1970-01-01T00:00:12.345Z",
-							"last_modified": "1970-01-01T00:00:12.345Z"
-						},
+						"id": 2,
+						"name": "ingr2",
+						"price": 2.50,
 						"units": 2
 					}
 				],
@@ -103,7 +91,7 @@ func TestHandleGetRecipe(t *testing.T) {
 				require.NoError(t, err)
 				_, err = components.Recipes.Create(context.Background(), recipes.CreateRecipeOptions{
 					Name: "recipe1",
-					Ingredients: []recipes.RecipeIngredientOptions{
+					Ingredients: []model.RecipeIngredient{
 						{
 							ID:    1,
 							Units: 1,

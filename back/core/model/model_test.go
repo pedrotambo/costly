@@ -13,33 +13,21 @@ func TestRecipeCost(t *testing.T) {
 	t.Run("cost of a recipe is the sum of its ingredients and units of them", func(t *testing.T) {
 		clock := clock.New()
 		now := clock.Now()
-		recipe := model.Recipe{
+		recipe := model.RecipeView{
 			ID:   1,
 			Name: "aName",
-			Ingredients: []model.RecipeIngredient{
+			Ingredients: []model.RecipeIngredientView{
 				{
-					Ingredient: model.Ingredient{
-						1,
-						"meat",
-						model.Gram,
-						1.0,
-						0,
-						now,
-						now,
-					},
+					ID:    1,
+					Name:  "meat",
 					Units: 500,
+					Price: 1,
 				},
 				{
-					Ingredient: model.Ingredient{
-						1,
-						"salt",
-						model.Gram,
-						10.0,
-						0,
-						now,
-						now,
-					},
+					ID:    2,
+					Name:  "salt",
 					Units: 5,
+					Price: 10.0,
 				},
 			},
 			CreatedAt:    now,

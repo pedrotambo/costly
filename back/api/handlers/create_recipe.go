@@ -26,9 +26,6 @@ func CreateRecipeHandler(recipeCreator recipes.RecipeCreator) http.HandlerFunc {
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
-		RespondJSON(w, 201, RecipeResponse{
-			Recipe: *recipe,
-			Cost:   recipe.Cost(),
-		})
+		RespondJSON(w, 201, recipe)
 	}
 }

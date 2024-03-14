@@ -79,33 +79,16 @@ func TestHandleCreateRecipe(t *testing.T) {
 				"name": "recipe1",
 				"ingredients": [
 					{
-						"ingredient": {
-							"id": 1,
-							"name": "ingr1",
-							"unit": "gr",
-							"price": 1.50,
-							"units_in_stock":0,
-							"created_at": "1970-01-01T00:00:12.345Z",
-							"last_modified": "1970-01-01T00:00:12.345Z"
-						},
+						"id": 1,
 						"units": 5
 					},
 					{
-						"ingredient": {
-							"id": 2,
-							"name": "ingr2",
-							"unit": "gr",
-							"price": 2.50,
-							"units_in_stock":0,
-							"created_at": "1970-01-01T00:00:12.345Z",
-							"last_modified": "1970-01-01T00:00:12.345Z"
-						},
+						"id": 2,
 						"units": 500
 					}
 				],
 				"created_at": "1970-01-01T00:00:12.345Z",
-				"last_modified": "1970-01-01T00:00:12.345Z",
-				"cost": 1257.5
+				"last_modified": "1970-01-01T00:00:12.345Z"
 			}`,
 			statusCode: http.StatusCreated,
 		},

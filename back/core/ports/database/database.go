@@ -17,27 +17,11 @@ type RowsScanner interface {
 	Next() bool
 }
 
-type RowQuerier interface {
-	QueryRowContext(ctx context.Context, query string, args ...any) RowScanner
-}
-
-type RowsQuerier interface {
-	QueryContext(ctx context.Context, query string, args ...any) (RowsScanner, error)
-}
-
-type QueryExecuter interface {
-	ExecContext(ctx context.Context, query string, args ...any) (sql.Result, error)
-}
-
 type Database interface {
-	TX
-	WithTx(ctx context.Context, op func(tx TX) error) error
-}
-
-type TX interface {
-	RowQuerier
-	RowsQuerier
-	QueryExecuter
+	QueryRowContext(ctx context.Context, query string, args ...any) RowScanner
+	QueryContext(ctx context.Context, query string, args ...any) (RowsScanner, error)
+	ExecContext(ctx context.Context, query string, args ...any) (sql.Result, error)
+	WithTx(ctx context.Context, op func(tx Database) error) error
 }
 
 type database struct {
@@ -79,15 +63,15 @@ func (db *database) ExecContext(ctx context.Context, query string, args ...any) 
 	return db.sqlDB.ExecContext(ctx, query, args...)
 }
 
-func (db *database) WithTx(ctx context.Context, op func(tx TX) error) error {
+func (db *database) WithTx(ctx context.Context, op func(tx Database) error) error {
 	tx, err := db.sqlDB.BeginTx(ctx, nil)
 	if err != nil {
 		return fmt.Errorf("failed to start transaction: %w", err)
 	}
-	err = op(NewTX(tx))
+	err = op(newTX(tx))
 	if err != nil {
-		if err := tx.Rollback(); err != nil && err != sql.ErrTxDone {
-			db.logger.Error(err, "failed to rollback transaction")
+		if rbErr := tx.Rollback(); rbErr != nil && rbErr != sql.ErrTxDone {
+			return fmt.Errorf("tx err: %v, rb err: %v", err, rbErr)
 		}
 		return err
 	}
@@ -99,7 +83,7 @@ type dbtx struct {
 	sqlTx *sql.Tx
 }
 
-func NewTX(sqltx *sql.Tx) TX {
+func newTX(sqltx *sql.Tx) Database {
 	return &dbtx{sqlTx: sqltx}
 }
 
@@ -113,4 +97,8 @@ func (tx *dbtx) QueryContext(ctx context.Context, query string, args ...any) (Ro
 
 func (tx *dbtx) ExecContext(ctx context.Context, query string, args ...any) (sql.Result, error) {
 	return tx.sqlTx.ExecContext(ctx, query, args...)
+}
+
+func (tx *dbtx) WithTx(ctx context.Context, op func(tx Database) error) error {
+	return op(tx)
 }
