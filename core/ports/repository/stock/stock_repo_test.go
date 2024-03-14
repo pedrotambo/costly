@@ -24,7 +24,8 @@ func TestAddIngredientStock(t *testing.T) {
 		db, _ := database.NewFromDatasource(":memory:", logger)
 		stockRepository := stockrepo.New(db)
 		ctx := context.Background()
-		err := stockRepository.Add(ctx, model.NewIngredientStock(1, 5, 1.0, clock.Now()))
+		stock, _ := model.NewIngredientStock(1, 5, 1.0, clock.Now())
+		err := stockRepository.Add(ctx, stock)
 		require.Error(t, err)
 	})
 
@@ -41,7 +42,7 @@ func TestAddIngredientStock(t *testing.T) {
 		ingredient2, _ := model.NewIngredient("second", model.Gram, 1.0, now)
 		err = ingredientRepository.Add(ctx, ingredient2)
 		require.NoError(t, err)
-		stock := model.NewIngredientStock(ingredient.ID, 5, 1.0, clock.Now())
+		stock, _ := model.NewIngredientStock(ingredient.ID, 5, 1.0, clock.Now())
 		stockRepository.Add(ctx, stock)
 		stockGet, err := stockRepository.Find(ctx, stock.ID)
 		require.NoError(t, err)

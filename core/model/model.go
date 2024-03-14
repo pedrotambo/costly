@@ -57,14 +57,22 @@ type IngredientStock struct {
 	CreatedAt    time.Time `json:"created_at"`
 }
 
-func NewIngredientStock(ingredientID int64, units int, price float64, now time.Time) *IngredientStock {
+func NewIngredientStock(ingredientID int64, units int, price float64, now time.Time) (*IngredientStock, error) {
+	if units <= 0 {
+		return &IngredientStock{}, errs.ErrBadStockUnits
+	}
+
+	if price <= 0 {
+		return &IngredientStock{}, errs.ErrBadPrice
+	}
+
 	return &IngredientStock{
 		ID:           -1,
 		IngredientID: ingredientID,
 		Units:        units,
 		Price:        price,
 		CreatedAt:    now,
-	}
+	}, nil
 }
 
 type RecipeIngredientView struct {
