@@ -1,3 +1,5 @@
+![Build](https://github.com/github/docs/actions/workflows/main.yml/badge.svg)
+
 # Costly
 
 Welcome to the Costly project! This software aims to assist restaurants in calculating the costs of their recipes to optimize pricing and manage expenses effectively. This project is still in progress and might evolve in a bigger system with more functionalities or become part of multiple micro-services aimed to help restaurant management. Some aspects might be considered overdesigned because I'm using this project to experiment and put into practice new designs and patterns.
@@ -57,7 +59,6 @@ Follow these instructions to get a copy of the project up and running on your lo
 3. Install backend dependencies:
 
    ```bash
-   cd back
    go mod tidy
    ```
 
