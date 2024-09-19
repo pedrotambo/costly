@@ -41,9 +41,8 @@ func TestCreateIngredient(t *testing.T) {
 			Unit:  model.Gram,
 		})
 
-		if err != nil {
-			t.Fatal()
-		}
+		require.NoError(t, err)
+
 		assert.Equal(t, ingredient.ID, int64(1))
 		assert.Equal(t, ingredient.Name, "name")
 		assert.Equal(t, ingredient.Price, 10.0)
